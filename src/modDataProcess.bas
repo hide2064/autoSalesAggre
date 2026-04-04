@@ -14,17 +14,17 @@ Public Sub BuildAllSheet(dictProduct As Object, dictCommission As Object, dictHe
     If lastRow >= 2 Then wsAll.Rows("2:" & lastRow).ClearContents
 
     ' Write header row
-    wsAll.Cells(1, ALL_COL_CLIENT).Value = "客先名"
-    wsAll.Cells(1, ALL_COL_PROD_CODE).Value = "製品コード"
-    wsAll.Cells(1, ALL_COL_AMOUNT).Value = "売上金額"
-    wsAll.Cells(1, ALL_COL_UNIT_PRICE).Value = "製品単価"
-    wsAll.Cells(1, ALL_COL_QTY).Value = "売上数量"
-    wsAll.Cells(1, ALL_COL_DATE).Value = "売上発生日"
-    wsAll.Cells(1, ALL_COL_SALE_TYPE).Value = "売上種別"
-    wsAll.Cells(1, ALL_COL_DEPT).Value = "部署"
-    wsAll.Cells(1, ALL_COL_PROD_NAME).Value = "製品名"
-    wsAll.Cells(1, ALL_COL_MARGIN).Value = "部署取り分"
-    wsAll.Cells(1, ALL_COL_SOURCE).Value = "ソースファイル"
+    wsAll.Cells(1, ALL_COL_CLIENT).Value = HDR_CLIENT
+    wsAll.Cells(1, ALL_COL_PROD_CODE).Value = HDR_PROD_CODE
+    wsAll.Cells(1, ALL_COL_AMOUNT).Value = HDR_AMOUNT
+    wsAll.Cells(1, ALL_COL_UNIT_PRICE).Value = HDR_UNIT_PRICE
+    wsAll.Cells(1, ALL_COL_QTY).Value = HDR_QTY
+    wsAll.Cells(1, ALL_COL_DATE).Value = HDR_DATE
+    wsAll.Cells(1, ALL_COL_SALE_TYPE).Value = HDR_SALE_TYPE
+    wsAll.Cells(1, ALL_COL_DEPT).Value = HDR_DEPT
+    wsAll.Cells(1, ALL_COL_PROD_NAME).Value = HDR_PROD_NAME
+    wsAll.Cells(1, ALL_COL_MARGIN).Value = HDR_MARGIN
+    wsAll.Cells(1, ALL_COL_SOURCE).Value = HDR_SOURCE
 
     allRowNum = 2
 
@@ -69,14 +69,14 @@ Private Function ProcessSourceSheet(wsSrc As Worksheet, wsAll As Worksheet, _
         srcHeader = LCase(Trim(CStr(wsSrc.Cells(1, c).Value)))
         If dictHeaderMap.Exists(srcHeader) Then
             Select Case dictHeaderMap(srcHeader)
-                Case "客先名":      colMap(ALL_COL_CLIENT - 1) = c
-                Case "製品コード":  colMap(ALL_COL_PROD_CODE - 1) = c
-                Case "売上金額":    colMap(ALL_COL_AMOUNT - 1) = c
-                Case "製品単価":    colMap(ALL_COL_UNIT_PRICE - 1) = c
-                Case "売上数量":    colMap(ALL_COL_QTY - 1) = c
-                Case "売上発生日":  colMap(ALL_COL_DATE - 1) = c
-                Case "売上種別":    colMap(ALL_COL_SALE_TYPE - 1) = c
-                Case "部署":        colMap(ALL_COL_DEPT - 1) = c
+                Case HDR_CLIENT:      colMap(ALL_COL_CLIENT - 1) = c
+                Case HDR_PROD_CODE:   colMap(ALL_COL_PROD_CODE - 1) = c
+                Case HDR_AMOUNT:      colMap(ALL_COL_AMOUNT - 1) = c
+                Case HDR_UNIT_PRICE:  colMap(ALL_COL_UNIT_PRICE - 1) = c
+                Case HDR_QTY:         colMap(ALL_COL_QTY - 1) = c
+                Case HDR_DATE:        colMap(ALL_COL_DATE - 1) = c
+                Case HDR_SALE_TYPE:   colMap(ALL_COL_SALE_TYPE - 1) = c
+                Case HDR_DEPT:        colMap(ALL_COL_DEPT - 1) = c
             End Select
         End If
     Next c
@@ -139,8 +139,7 @@ Public Function CollectUniqueDepts() As Object
     Dim r As Long
     Dim dept As String
 
-    Set dict = CreateObject("Scripting.Dictionary")
-    dict.CompareMode = vbTextCompare
+    Set dict = NewDict()
 
     Set wsAll = ThisWorkbook.Sheets(SH_ALL)
 

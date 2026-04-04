@@ -51,16 +51,15 @@ Public Sub Rebuild()
     Set wsAll = ThisWorkbook.Sheets(SH_ALL)
     lastRow = wsAll.Cells(wsAll.Rows.Count, 1).End(xlUp).Row
 
-    ClearAggrTable wsAggr
     If lastRow < 2 Then Exit Sub
+    ClearAggrTable wsAggr
 
     allData = wsAll.Range(wsAll.Cells(2, 1), wsAll.Cells(lastRow, ALL_TOTAL_COLS)).Value
 
     ' Aggregate into dictSummary
     ' Key:   製品名 & "||" & 客先名
     ' Value: Array(売上金額合計, 数量合計, 口銭合計)
-    Set dictSummary = CreateObject("Scripting.Dictionary")
-    dictSummary.CompareMode = vbTextCompare
+    Set dictSummary = NewDict()
 
     For r = 1 To UBound(allData, 1)
         ' Dept filter
@@ -171,6 +170,10 @@ Private Sub DrawAggrTable(wsAggr As Worksheet, dictSummary As Object)
                 .Font.Bold = True
                 .Interior.Color = RGB(220, 220, 220)
             End With
+            ' Apply number format once when parent row is created
+            ApplyNumFormat wsAggr.Cells(currentRow, 2)
+            ApplyNumFormat wsAggr.Cells(currentRow, 3)
+            ApplyNumFormat wsAggr.Cells(currentRow, 4)
             currentProd = pName
             prodSubAmt = 0: prodSubQty = 0: prodSubMargin = 0
             currentRow = currentRow + 1
@@ -192,9 +195,6 @@ Private Sub DrawAggrTable(wsAggr As Worksheet, dictSummary As Object)
         wsAggr.Cells(prodStartRow, 2).Value = prodSubAmt
         wsAggr.Cells(prodStartRow, 3).Value = prodSubQty
         wsAggr.Cells(prodStartRow, 4).Value = prodSubMargin
-        ApplyNumFormat wsAggr.Cells(prodStartRow, 2)
-        ApplyNumFormat wsAggr.Cells(prodStartRow, 3)
-        ApplyNumFormat wsAggr.Cells(prodStartRow, 4)
 
         totalAmt = totalAmt + vals(0)
         totalQty = totalQty + vals(1)

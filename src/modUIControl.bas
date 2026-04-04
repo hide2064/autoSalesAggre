@@ -10,11 +10,11 @@ Public Sub RunAll()
     Dim successCount As Integer
     Dim dictDept As Object
 
+    On Error GoTo ErrHandler
+
     Application.ScreenUpdating = False
     Application.Calculation = xlCalculationManual
     Application.EnableEvents = False
-
-    On Error GoTo ErrHandler
 
     LogMessage "===== 処理開始 ====="
 

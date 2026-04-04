@@ -17,10 +17,14 @@ Public Function LoadTsvToSheet(filePath As String) As Boolean
     Dim ws As Worksheet
     Dim newSheet As Worksheet
     Dim fileNum As Integer
-    Dim rowNum As Long
     Dim lineText As String
     Dim cols() As String
+    Dim lines() As String
+    Dim lineCount As Long
+    Dim maxCols As Integer
+    Dim r As Long
     Dim c As Integer
+    Dim dataArr() As Variant
 
     sheetName = FilePathToSheetName(filePath)
 
@@ -38,26 +42,47 @@ Public Function LoadTsvToSheet(filePath As String) As Boolean
     Set newSheet = ThisWorkbook.Sheets.Add(Before:=ThisWorkbook.Sheets(SH_AGGR))
     newSheet.Name = sheetName
 
-    ' Read TSV line by line, store all values as text to preserve leading zeros
+    ' Pass 1: read all lines and find dimensions
     fileNum = FreeFile
     Open filePath For Input As #fileNum
-
-    rowNum = 1
+    lineCount = 0
+    maxCols = 0
     Do While Not EOF(fileNum)
         Line Input #fileNum, lineText
-
+        lineCount = lineCount + 1
         cols = Split(lineText, vbTab)
-
-        For c = 0 To UBound(cols)
-            With newSheet.Cells(rowNum, c + 1)
-                .NumberFormat = "@"
-                .Value = cols(c)
-            End With
-        Next c
-        rowNum = rowNum + 1
+        If UBound(cols) + 1 > maxCols Then maxCols = UBound(cols) + 1
     Loop
-
     Close #fileNum
+    fileNum = 0
+
+    If lineCount = 0 Or maxCols = 0 Then
+        LoadTsvToSheet = True
+        Exit Function
+    End If
+
+    ' Pass 2: read into 2D Variant array
+    ReDim dataArr(1 To lineCount, 1 To maxCols)
+    fileNum = FreeFile
+    Open filePath For Input As #fileNum
+    r = 1
+    Do While Not EOF(fileNum)
+        Line Input #fileNum, lineText
+        cols = Split(lineText, vbTab)
+        For c = 0 To UBound(cols)
+            dataArr(r, c + 1) = cols(c)
+        Next c
+        r = r + 1
+    Loop
+    Close #fileNum
+    fileNum = 0
+
+    ' Set text format on entire range first, then bulk-write values
+    With newSheet.Range(newSheet.Cells(1, 1), newSheet.Cells(lineCount, maxCols))
+        .NumberFormat = "@"
+        .Value = dataArr
+    End With
+
     LoadTsvToSheet = True
     Exit Function
 

@@ -41,7 +41,27 @@ Public Const AGGR_DATA_ROW  As Integer = 6
 ' ===== main sheet =====
 Public Const MAIN_LOG_START_ROW As Integer = 3
 
+' ===== Canonical column header names (used in all sheet header + header map) =====
+Public Const HDR_CLIENT     As String = "客先名"
+Public Const HDR_PROD_CODE  As String = "製品コード"
+Public Const HDR_AMOUNT     As String = "売上金額"
+Public Const HDR_UNIT_PRICE As String = "製品単価"
+Public Const HDR_QTY        As String = "売上数量"
+Public Const HDR_DATE       As String = "売上発生日"
+Public Const HDR_SALE_TYPE  As String = "売上種別"
+Public Const HDR_DEPT       As String = "部署"
+Public Const HDR_PROD_NAME  As String = "製品名"
+Public Const HDR_MARGIN     As String = "部署取り分"
+Public Const HDR_SOURCE     As String = "ソースファイル"
+
 ' ---------- Master loading ----------
+
+Public Function NewDict() As Object
+    Dim d As Object
+    Set d = CreateObject("Scripting.Dictionary")
+    d.CompareMode = vbTextCompare
+    Set NewDict = d
+End Function
 
 Public Function LoadProductDict() As Object
     Dim dict As Object
@@ -49,8 +69,7 @@ Public Function LoadProductDict() As Object
     Dim r As Long
     Dim code As String
 
-    Set dict = CreateObject("Scripting.Dictionary")
-    dict.CompareMode = vbTextCompare
+    Set dict = NewDict()
 
     Set ws = ThisWorkbook.Sheets(SH_CONFIG)
 
@@ -73,8 +92,7 @@ Public Function LoadCommissionDict() As Object
     Dim stype As String
     Dim rateVal As Variant
 
-    Set dict = CreateObject("Scripting.Dictionary")
-    dict.CompareMode = vbTextCompare
+    Set dict = NewDict()
 
     Set ws = ThisWorkbook.Sheets(SH_CONFIG)
 
@@ -97,7 +115,6 @@ Public Function LoadCommissionDict() As Object
 End Function
 
 Public Function LoadHeaderMap() As Object
-    ' Returns dict: LCase(trimmed_alias) -> canonical_column_name
     Dim dict As Object
     Dim ws As Worksheet
     Dim r As Long
@@ -107,8 +124,7 @@ Public Function LoadHeaderMap() As Object
     Dim i As Integer
     Dim a As String
 
-    Set dict = CreateObject("Scripting.Dictionary")
-    dict.CompareMode = vbTextCompare
+    Set dict = NewDict()
 
     Set ws = ThisWorkbook.Sheets(SH_CONFIG)
 
