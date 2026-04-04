@@ -45,16 +45,17 @@ Public Const MAIN_LOG_START_ROW As Integer = 3
 
 Public Function LoadProductDict() As Object
     Dim dict As Object
+    Dim ws As Worksheet
+    Dim r As Long
+    Dim code As String
+
     Set dict = CreateObject("Scripting.Dictionary")
     dict.CompareMode = vbTextCompare
 
-    Dim ws As Worksheet
     Set ws = ThisWorkbook.Sheets(SH_CONFIG)
 
-    Dim r As Long
     r = CFG_PRODUCT_HDR_ROW + 1
     Do While Trim(CStr(ws.Cells(r, CFG_PRODUCT_COL).Value)) <> ""
-        Dim code As String
         code = Trim(CStr(ws.Cells(r, CFG_PRODUCT_COL).Value))
         If Not dict.Exists(code) Then
             dict(code) = Trim(CStr(ws.Cells(r, CFG_PRODUCT_COL + 1).Value))
@@ -67,19 +68,27 @@ End Function
 
 Public Function LoadCommissionDict() As Object
     Dim dict As Object
+    Dim ws As Worksheet
+    Dim r As Long
+    Dim stype As String
+    Dim rateVal As Variant
+
     Set dict = CreateObject("Scripting.Dictionary")
     dict.CompareMode = vbTextCompare
 
-    Dim ws As Worksheet
     Set ws = ThisWorkbook.Sheets(SH_CONFIG)
 
-    Dim r As Long
     r = CFG_COMMISSION_HDR_ROW + 1
     Do While Trim(CStr(ws.Cells(r, CFG_COMMISSION_COL).Value)) <> ""
-        Dim stype As String
         stype = Trim(CStr(ws.Cells(r, CFG_COMMISSION_COL).Value))
         If Not dict.Exists(stype) Then
-            dict(stype) = CDbl(ws.Cells(r, CFG_COMMISSION_COL + 1).Value)
+            rateVal = ws.Cells(r, CFG_COMMISSION_COL + 1).Value
+            If IsNumeric(rateVal) Then
+                dict(stype) = CDbl(rateVal)
+            Else
+                dict(stype) = 0
+                Debug.Print "modConfig: 口銭比率が数値でありません [" & stype & "] = " & CStr(rateVal)
+            End If
         End If
         r = r + 1
     Loop
@@ -90,29 +99,30 @@ End Function
 Public Function LoadHeaderMap() As Object
     ' Returns dict: LCase(trimmed_alias) -> canonical_column_name
     Dim dict As Object
+    Dim ws As Worksheet
+    Dim r As Long
+    Dim canonical As String
+    Dim aliases As String
+    Dim parts() As String
+    Dim i As Integer
+    Dim a As String
+
     Set dict = CreateObject("Scripting.Dictionary")
     dict.CompareMode = vbTextCompare
 
-    Dim ws As Worksheet
     Set ws = ThisWorkbook.Sheets(SH_CONFIG)
 
-    Dim r As Long
     r = CFG_HEADER_HDR_ROW + 1
     Do While Trim(CStr(ws.Cells(r, CFG_HEADER_COL).Value)) <> ""
-        Dim canonical As String
         canonical = Trim(CStr(ws.Cells(r, CFG_HEADER_COL).Value))
-        Dim aliases As String
         aliases = Trim(CStr(ws.Cells(r, CFG_HEADER_COL + 1).Value))
 
         ' Register canonical name itself
         If Not dict.Exists(LCase(canonical)) Then dict(LCase(canonical)) = canonical
 
         ' Register each alias
-        Dim parts() As String
         parts = Split(aliases, ",")
-        Dim i As Integer
         For i = 0 To UBound(parts)
-            Dim a As String
             a = LCase(Trim(parts(i)))
             If a <> "" And Not dict.Exists(a) Then dict(a) = canonical
         Next i
@@ -124,10 +134,15 @@ End Function
 
 Public Sub RefreshDeptList(dictDept As Object)
     Dim ws As Worksheet
+    Dim clearRow As Long
+    Dim r As Long
+    Dim key As Variant
+    Dim lastDeptRow As Long
+    Dim wsAggr As Worksheet
+
     Set ws = ThisWorkbook.Sheets(SH_CONFIG)
 
     ' Clear J3 downward
-    Dim clearRow As Long
     clearRow = CFG_DEPT_HDR_ROW + 1
     Do While Trim(CStr(ws.Cells(clearRow, CFG_DEPT_COL).Value)) <> ""
         ws.Cells(clearRow, CFG_DEPT_COL).ClearContents
@@ -138,19 +153,15 @@ Public Sub RefreshDeptList(dictDept As Object)
     ws.Cells(CFG_DEPT_HDR_ROW, CFG_DEPT_COL).Value = "全部署"
 
     ' Write unique depts from J3
-    Dim r As Long
     r = CFG_DEPT_HDR_ROW + 1
-    Dim key As Variant
     For Each key In dictDept.Keys
         ws.Cells(r, CFG_DEPT_COL).Value = key
         r = r + 1
     Next key
 
-    Dim lastDeptRow As Long
     lastDeptRow = r - 1
 
     ' Update 集計!B1 dropdown
-    Dim wsAggr As Worksheet
     Set wsAggr = ThisWorkbook.Sheets(SH_AGGR)
     With wsAggr.Range(AGGR_DEPT_CELL).Validation
         .Delete
