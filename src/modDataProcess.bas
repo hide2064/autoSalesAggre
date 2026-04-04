@@ -5,6 +5,7 @@ Public Sub BuildAllSheet(dictProduct As Object, dictCommission As Object, dictHe
     Dim wsAll As Worksheet
     Dim lastRow As Long
     Dim ws As Worksheet
+    Dim allRowNum As Long
 
     Set wsAll = ThisWorkbook.Sheets(SH_ALL)
 
@@ -25,7 +26,6 @@ Public Sub BuildAllSheet(dictProduct As Object, dictCommission As Object, dictHe
     wsAll.Cells(1, ALL_COL_MARGIN).Value = "部署取り分"
     wsAll.Cells(1, ALL_COL_SOURCE).Value = "ソースファイル"
 
-    Dim allRowNum As Long
     allRowNum = 2
 
     For Each ws In ThisWorkbook.Sheets
@@ -44,7 +44,7 @@ Private Function ProcessSourceSheet(wsSrc As Worksheet, wsAll As Worksheet, _
 
     Dim lastSrcRow As Long
     Dim lastSrcCol As Integer
-    Dim colMap(10) As Integer
+    Dim colMap(7) As Integer
     Dim c As Integer
     Dim srcHeader As String
     Dim srcData As Variant
