@@ -157,9 +157,15 @@ Private Sub SetupAggrSheet()
     ws.Columns("A").ColumnWidth = 30
     ws.Columns("B:D").ColumnWidth = 15
 
+    ' Add chart button
+    Dim chartBtn As Object
+    Set chartBtn = ws.Buttons.Add(330, 5, 150, 28)
+    chartBtn.Caption = "グラフ作成"
+    chartBtn.OnAction = "modChart.DrawAggrChart"
+
     ' Add upload button
     Dim uploadBtn As Object
-    Set uploadBtn = ws.Buttons.Add(330, 5, 180, 28)
+    Set uploadBtn = ws.Buttons.Add(490, 5, 180, 28)
     uploadBtn.Caption = "SharePointへアップロード"
     uploadBtn.OnAction = "modSharePoint.UploadToSharePoint"
 End Sub
