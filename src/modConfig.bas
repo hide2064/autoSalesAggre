@@ -11,6 +11,11 @@ Public Const CFG_HEADER_COL         As Integer = 7   ' G: 正規名
 Public Const CFG_DEPT_HDR_ROW       As Integer = 2   ' 部署リスト header row (J2)
 Public Const CFG_DEPT_COL           As Integer = 10  ' J: 部署リスト
 
+' ===== SharePoint / Power Automate =====
+Public Const CFG_PA_LABEL_COL As Integer = 12  ' L: ラベル列
+Public Const CFG_PA_URL_COL   As Integer = 13  ' M: URL値列
+Public Const CFG_PA_URL_ROW   As Integer = 2   ' PowerAutomate URL行 (M2)
+
 ' ===== all sheet column indices (1-based) =====
 Public Const ALL_COL_CLIENT     As Integer = 1   ' 客先名
 Public Const ALL_COL_PROD_CODE  As Integer = 2   ' 製品コード
@@ -146,6 +151,12 @@ Public Function LoadHeaderMap() As Object
     Loop
 
     Set LoadHeaderMap = dict
+End Function
+
+Public Function LoadPowerAutomateUrl() As String
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(SH_CONFIG)
+    LoadPowerAutomateUrl = Trim(CStr(ws.Cells(CFG_PA_URL_ROW, CFG_PA_URL_COL).Value))
 End Function
 
 Public Sub RefreshDeptList(dictDept As Object)

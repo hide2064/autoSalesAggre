@@ -80,6 +80,14 @@ Private Sub SetupConfigSheet()
     ws.Columns("G:H").ColumnWidth = 20
     ws.Columns("J").ColumnWidth = 16
 
+    ' SharePoint連携 (L1:M)
+    ws.Cells(1, CFG_PA_LABEL_COL).Value = "SharePoint連携"
+    ws.Cells(1, CFG_PA_LABEL_COL).Font.Bold = True
+    ws.Cells(2, CFG_PA_LABEL_COL).Value = "PowerAutomate URL"
+    ws.Cells(2, CFG_PA_LABEL_COL).Font.Bold = True
+    ws.Columns("L").ColumnWidth = 20
+    ws.Columns("M").ColumnWidth = 60
+
     ' Sample 製品マスタ data
     ws.Cells(3, 1).Value = "P001": ws.Cells(3, 2).Value = "製品A"
     ws.Cells(4, 1).Value = "P002": ws.Cells(4, 2).Value = "製品B"
@@ -118,6 +126,12 @@ Private Sub SetupAllSheet()
         .Interior.Color = RGB(200, 220, 240)
     End With
     ws.Columns("A:K").AutoFit
+
+    ' Add upload button
+    Dim uploadBtn As Object
+    Set uploadBtn = ws.Buttons.Add(700, 5, 180, 28)
+    uploadBtn.Caption = "SharePointへアップロード"
+    uploadBtn.OnAction = "modSharePoint.UploadAllToSharePoint"
 End Sub
 
 Private Sub SetupAggrSheet()
@@ -142,6 +156,18 @@ Private Sub SetupAggrSheet()
 
     ws.Columns("A").ColumnWidth = 30
     ws.Columns("B:D").ColumnWidth = 15
+
+    ' Add chart button
+    Dim chartBtn As Object
+    Set chartBtn = ws.Buttons.Add(330, 5, 150, 28)
+    chartBtn.Caption = "グラフ作成"
+    chartBtn.OnAction = "modChart.DrawAggrChart"
+
+    ' Add upload button
+    Dim uploadBtn As Object
+    Set uploadBtn = ws.Buttons.Add(490, 5, 180, 28)
+    uploadBtn.Caption = "SharePointへアップロード"
+    uploadBtn.OnAction = "modSharePoint.UploadToSharePoint"
 End Sub
 
 Private Sub InjectAggrEvent()

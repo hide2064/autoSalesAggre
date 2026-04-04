@@ -54,6 +54,8 @@ vbp.VBComponents.Import srcPath & "modFileIO.bas"
 vbp.VBComponents.Import srcPath & "modDataProcess.bas"
 vbp.VBComponents.Import srcPath & "modAggregation.bas"
 vbp.VBComponents.Import srcPath & "modUIControl.bas"
+vbp.VBComponents.Import srcPath & "modSharePoint.bas"
+vbp.VBComponents.Import srcPath & "modChart.bas"
 vbp.VBComponents.Import srcPath & "modSetup.bas"
 WScript.Echo "Modules imported."
 
