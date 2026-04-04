@@ -30,9 +30,19 @@ Do While wb.Sheets.Count > 1
     wb.Sheets(wb.Sheets.Count).Delete
 Loop
 wb.Sheets(1).Name = "main"
-wb.Sheets.Add(After:=wb.Sheets("main")).Name = "Config"
-wb.Sheets.Add(After:=wb.Sheets("Config")).Name = "all"
-wb.Sheets.Add(After:=wb.Sheets("all")).Name = "Shuukei"
+Dim shConfig, shAll, shShuukei
+' Add sheets without named args; they land before index 1, then rename in order
+Set shConfig  = wb.Sheets.Add()
+shConfig.Name = "Config"
+Set shAll     = wb.Sheets.Add()
+shAll.Name    = "all"
+Set shShuukei = wb.Sheets.Add()
+shShuukei.Name = "Shuukei"
+' Arrange order: main(1), Config(2), all(3), Shuukei(4)
+wb.Sheets("main").Move    wb.Sheets(1)
+wb.Sheets("Config").Move  wb.Sheets(2)
+wb.Sheets("all").Move     wb.Sheets(3)
+wb.Sheets("Shuukei").Move wb.Sheets(4)
 
 ' ---- Import VBA modules ----
 WScript.Echo "Importing VBA modules..."
