@@ -1,0 +1,11 @@
+# Generated workbook (rebuild from src/ with setup/create_workbook.vbs)
+*.xlsm
+*.xlsb
+*.xls
+
+# Excel temp files
+~$*
+
+# OS
+.DS_Store
+Thumbs.db
