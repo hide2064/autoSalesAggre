@@ -62,6 +62,7 @@ Public Function LoadTsvToSheet(filePath As String) As Boolean
     Exit Function
 
 ErrHandler:
+    Application.DisplayAlerts = True
     If fileNum > 0 Then Close #fileNum
     LoadTsvToSheet = False
 End Function
