@@ -126,6 +126,12 @@ Private Sub SetupAllSheet()
         .Interior.Color = RGB(200, 220, 240)
     End With
     ws.Columns("A:K").AutoFit
+
+    ' Add upload button
+    Dim uploadBtn As Object
+    Set uploadBtn = ws.Buttons.Add(700, 5, 180, 28)
+    uploadBtn.Caption = "SharePointへアップロード"
+    uploadBtn.OnAction = "modSharePoint.UploadAllToSharePoint"
 End Sub
 
 Private Sub SetupAggrSheet()

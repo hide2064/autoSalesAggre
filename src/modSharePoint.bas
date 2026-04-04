@@ -107,6 +107,101 @@ HttpErr:
            vbCritical, "エラー"
 End Sub
 
+' allシートの全データを Power Automate 経由で SharePoint にアップロード
+'
+' 送信 JSON 形式:
+'   {
+'     "uploadedAt": "2026/04/04 12:00:00",
+'     "rows": [
+'       {
+'         "client":    "客先A",    "prodCode": "P001",
+'         "amount":    10000,      "unitPrice": 1000,
+'         "qty":       10,         "date":      "2026/01/15",
+'         "saleType":  "直販",     "dept":      "営業部",
+'         "prodName":  "製品A",    "margin":    1000,
+'         "source":    "jan.tsv"
+'       }, ...
+'     ]
+'   }
+Public Sub UploadAllToSharePoint()
+    Dim paUrl As String
+    Dim wsAll As Worksheet
+    Dim lastRow As Long
+    Dim allData As Variant
+    Dim r As Long
+    Dim rowsJson As String
+    Dim sep As String
+    Dim jsonBody As String
+    Dim http As Object
+
+    paUrl = LoadPowerAutomateUrl()
+    If paUrl = "" Then
+        MsgBox "ConfigシートのM2にPowerAutomate URLが設定されていません。", _
+               vbExclamation, "設定エラー"
+        Exit Sub
+    End If
+
+    Set wsAll = ThisWorkbook.Sheets(SH_ALL)
+    lastRow = wsAll.Cells(wsAll.Rows.Count, 1).End(xlUp).Row
+
+    If lastRow < 2 Then
+        MsgBox "allシートにデータがありません。先にファイルを読み込んでください。", _
+               vbExclamation, "データなし"
+        Exit Sub
+    End If
+
+    ' 一括読み込み（2行目以降を Variant 配列へ）
+    allData = wsAll.Range(wsAll.Cells(2, 1), wsAll.Cells(lastRow, ALL_TOTAL_COLS)).Value
+
+    ' 各行を JSON オブジェクトに変換
+    rowsJson = ""
+    sep = ""
+    For r = 1 To UBound(allData, 1)
+        rowsJson = rowsJson & sep & "{"
+        rowsJson = rowsJson & """client"":"    & JsonString(allData(r, ALL_COL_CLIENT))     & ","
+        rowsJson = rowsJson & """prodCode"":"  & JsonString(allData(r, ALL_COL_PROD_CODE))  & ","
+        rowsJson = rowsJson & """amount"":"    & JsonNumber(allData(r, ALL_COL_AMOUNT))     & ","
+        rowsJson = rowsJson & """unitPrice"":" & JsonNumber(allData(r, ALL_COL_UNIT_PRICE)) & ","
+        rowsJson = rowsJson & """qty"":"       & JsonNumber(allData(r, ALL_COL_QTY))        & ","
+        rowsJson = rowsJson & """date"":"      & JsonString(allData(r, ALL_COL_DATE))       & ","
+        rowsJson = rowsJson & """saleType"":"  & JsonString(allData(r, ALL_COL_SALE_TYPE))  & ","
+        rowsJson = rowsJson & """dept"":"      & JsonString(allData(r, ALL_COL_DEPT))       & ","
+        rowsJson = rowsJson & """prodName"":"  & JsonString(allData(r, ALL_COL_PROD_NAME))  & ","
+        rowsJson = rowsJson & """margin"":"    & JsonNumber(allData(r, ALL_COL_MARGIN))     & ","
+        rowsJson = rowsJson & """source"":"    & JsonString(allData(r, ALL_COL_SOURCE))
+        rowsJson = rowsJson & "}"
+        sep = ","
+    Next r
+
+    jsonBody = "{"
+    jsonBody = jsonBody & """uploadedAt"":" & JsonString(Format(Now(), "yyyy/mm/dd hh:mm:ss")) & ","
+    jsonBody = jsonBody & """rows"":["      & rowsJson & "]"
+    jsonBody = jsonBody & "}"
+
+    ' HTTP POST 送信
+    On Error GoTo HttpErr
+    Set http = CreateObject("MSXML2.XMLHTTP")
+    http.Open "POST", paUrl, False
+    http.setRequestHeader "Content-Type", "application/json"
+    http.send jsonBody
+
+    If http.Status = 200 Or http.Status = 202 Then
+        LogMessage "allシートSharePointアップロード完了 (HTTP " & http.Status & "): " & (lastRow - 1) & "行"
+        MsgBox "allシートのSharePointへのアップロードが完了しました。" & vbCrLf & _
+               (lastRow - 1) & "件のデータを送信しました。", vbInformation, "完了"
+    Else
+        LogMessage "[エラー] allシートSharePointアップロード失敗 (HTTP " & http.Status & "): " & http.responseText
+        MsgBox "アップロードに失敗しました。" & vbCrLf & _
+               "HTTP " & http.Status & vbCrLf & http.responseText, vbCritical, "エラー"
+    End If
+    Exit Sub
+
+HttpErr:
+    LogMessage "[エラー] allシートSharePointアップロード例外: " & Err.Description
+    MsgBox "アップロード中にエラーが発生しました:" & vbCrLf & Err.Description, _
+           vbCritical, "エラー"
+End Sub
+
 ' ---- ヘルパー ----
 
 Private Function JsonString(s As Variant) As String
