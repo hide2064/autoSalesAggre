@@ -16,6 +16,7 @@ Option Explicit
 '   4. all シート構築 (modDataProcess)
 '   5. 部署リスト更新 (modConfig)
 '   6. 集計再描画 (modAggregation)
+'   7. ピボットテーブル更新 (modPivot)
 '
 ' Application.EnableEvents の制御:
 '   ・RunAll 開始時に False にして集計シートの Worksheet_Change が
@@ -96,6 +97,11 @@ Public Sub RunAll()
     Application.EnableEvents = True
     Rebuild
     LogMessage "集計完了"
+
+    ' --- ピボットテーブル更新 ---
+    ' Rebuild の後に実行することで最新の all シートデータが確実に反映される
+    BuildPivot
+    LogMessage "ピボットテーブル更新完了"
 
     LogMessage "===== 処理完了 ====="
 

@@ -76,10 +76,11 @@ Public Const ALL_TOTAL_COLS     As Integer = 11  ' all シートの総列数
 ' ============================================================
 ' シート名定数
 ' ============================================================
-Public Const SH_MAIN   As String = "main"   ' 実行ログ・操作ボタン
-Public Const SH_CONFIG As String = "Config" ' マスタ・設定値
-Public Const SH_ALL    As String = "all"    ' 全ソースデータ集約
-Public Const SH_AGGR   As String = "集計"  ' 部署・日付フィルタ付き集計表示
+Public Const SH_MAIN   As String = "main"    ' 実行ログ・操作ボタン
+Public Const SH_CONFIG As String = "Config"  ' マスタ・設定値
+Public Const SH_ALL    As String = "all"     ' 全ソースデータ集約
+Public Const SH_AGGR   As String = "集計"   ' 部署・日付フィルタ付き集計表示
+Public Const SH_PIVOT  As String = "ピボット" ' Excel ネイティブ PivotTable
 
 ' ============================================================
 ' 集計シート — セルアドレス・行番号定数

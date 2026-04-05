@@ -22,24 +22,27 @@ Option Explicit
 '
 ' create_workbook.vbs から xlApp.Run "modSetup.InitWorkbook" で呼ばれる。
 ' 処理順序:
-'   1. "Shuukei" または "Sheet4/Sheet3" を "集計" にリネーム
+'   1. 仮名シート (Shuukei → "集計"、Pivot → "ピボット") をリネーム
 '   2. 各シートのレイアウト設定
 '   3. 集計シートへの Worksheet_Change イベントコード注入
 ' ============================================================
 Public Sub InitWorkbook()
-    ' create_workbook.vbs で作成した仮名シート(Shuukei)を正式名 "集計" にリネーム
+    ' create_workbook.vbs で作成した仮名シートを正式名にリネーム
     Dim ws As Worksheet
     For Each ws In ThisWorkbook.Sheets
-        If ws.Name = "Shuukei" Or ws.Name = "Sheet4" Or ws.Name = "Sheet3" Then
-            ws.Name = SH_AGGR
-            Exit For
-        End If
+        Select Case ws.Name
+            Case "Shuukei", "Sheet4", "Sheet3"
+                ws.Name = SH_AGGR   ' "Shuukei" → "集計"
+            Case "Pivot"
+                ws.Name = SH_PIVOT  ' "Pivot"   → "ピボット"
+        End Select
     Next ws
 
     SetupMainSheet
     SetupConfigSheet
     SetupAllSheet
     SetupAggrSheet
+    SetupPivotSheet
     InjectAggrEvent
 End Sub
 
@@ -233,6 +236,37 @@ Private Sub SetupAggrSheet()
     Set uploadBtn = ws.Buttons.Add(490, 5, 180, 28)
     uploadBtn.Caption  = "SharePointへアップロード"
     uploadBtn.OnAction = "modSharePoint.UploadToSharePoint"
+End Sub
+
+' ============================================================
+' SetupPivotSheet — ピボットシートの UI 領域（タイトル・ボタン）を設定する（プライベート）
+'
+' 設定内容:
+'   A1: タイトル "売上ピボットテーブル"（太字）
+'   A2: 使い方の説明文
+'   「ピボットテーブル更新」ボタン → modPivot.BuildPivot に接続
+'
+' PivotTable 本体は modPivot.BuildPivot が行 4 以降に動的に作成する。
+' このサブルーチンは UI 部分のみを担当する。
+' ============================================================
+Private Sub SetupPivotSheet()
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(SH_PIVOT)
+
+    ' --- タイトルと使い方説明 ---
+    ws.Cells(1, 1).Value    = "売上ピボットテーブル"
+    ws.Cells(1, 1).Font.Bold = True
+    ws.Cells(1, 1).Font.Size = 14
+    ws.Cells(2, 1).Value    = "RunAll 実行時に自動更新されます。" & _
+                               "フィールドリストで行・列・フィルター・値を自由に配置できます。"
+    ws.Cells(2, 1).Font.Color = RGB(100, 100, 100)
+    ws.Columns("A").ColumnWidth = 35
+
+    ' --- 更新ボタン（タイトル行の右側に配置）---
+    Dim btn As Object
+    Set btn = ws.Buttons.Add(400, 5, 160, 28)
+    btn.Caption  = "ピボットテーブル更新"
+    btn.OnAction = "modPivot.BuildPivot"
 End Sub
 
 ' ============================================================
