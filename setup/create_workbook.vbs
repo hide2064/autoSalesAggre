@@ -14,12 +14,13 @@ Option Explicit
 '     「プログラムによるVisual Basicプロジェクトへのアクセスは信頼性に欠けます」
 '
 ' 処理概要:
-'   1. Excel をバックグラウンドで起動する
-'   2. 新規ワークブックに 4 シート (main, Config, all, Shuukei) を作成する
-'   3. src\ 配下の .bas モジュールを VBProject にインポートする
-'   4. modSetup.InitWorkbook を実行してシートのレイアウト・ボタン・
-'      イベントコードを設定する（Shuukei を "集計" にリネームも含む）
-'   5. .xlsm 形式で上書き保存する
+'   1. src\ フォルダの存在確認
+'   2. Excel をバックグラウンドで起動する
+'   3. 新規ワークブックに 5 シート (main, Config, all, Shuukei, Pivot) を作成する
+'   4. src\ 配下の .bas モジュールを VBProject にインポートする
+'   5. modSetup.InitWorkbook を実行してシートのレイアウト・ボタン・
+'      イベントコードを設定する（Shuukei → "集計"、Pivot → "ピボット" リネームも含む）
+'   6. .xlsm 形式で上書き保存する
 '
 ' 出力ファイル:
 '   autoSalesAggre.xlsm（スクリプトの1つ上のディレクトリに生成）
@@ -43,16 +44,68 @@ WScript.Echo "Setup started"
 WScript.Echo "Source : " & srcPath
 WScript.Echo "Output : " & outputFile
 
+' --- src\ フォルダの存在確認 ---
+' モジュールが存在しない場合は早期に終了する（後続の Excel 起動を無駄にしない）
+If Not fso.FolderExists(srcPath) Then
+    WScript.Echo "[ERROR] src フォルダが見つかりません: " & srcPath
+    WScript.Echo "スクリプトを setup\ フォルダから実行しているか確認してください。"
+    WScript.Quit 1
+End If
+
+' インポートする .bas ファイルの一覧（不足している場合に早期検出）
+Dim requiredModules(8)
+requiredModules(0) = "modConfig.bas"
+requiredModules(1) = "modFileIO.bas"
+requiredModules(2) = "modDataProcess.bas"
+requiredModules(3) = "modAggregation.bas"
+requiredModules(4) = "modUIControl.bas"
+requiredModules(5) = "modSharePoint.bas"
+requiredModules(6) = "modChart.bas"
+requiredModules(7) = "modPivot.bas"
+requiredModules(8) = "modSetup.bas"
+
+Dim i
+For i = 0 To UBound(requiredModules)
+    If Not fso.FileExists(srcPath & requiredModules(i)) Then
+        WScript.Echo "[ERROR] モジュールファイルが見つかりません: " & srcPath & requiredModules(i)
+        WScript.Quit 1
+    End If
+Next
+
+' ============================================================
+' Excel 操作ブロック
+'
+' On Error Resume Next を使い、エラー発生時でも必ず xlApp.Quit を
+' 呼び出してバックグラウンド Excel プロセスを残さないようにする。
+' ============================================================
+Dim xlApp, wb
+Set xlApp = Nothing
+
+On Error Resume Next
+
 ' --- Excel をバックグラウンドで起動 ---
 ' Visible = False で画面に表示しない（処理中に誤操作されるのを防ぐ）
 ' DisplayAlerts = False で確認ダイアログを抑制する
-Dim xlApp, wb
 Set xlApp = CreateObject("Excel.Application")
-xlApp.Visible      = False
+If Err.Number <> 0 Then
+    WScript.Echo "[ERROR] Excel の起動に失敗しました: " & Err.Description
+    WScript.Quit 1
+End If
+On Error GoTo 0  ' エラートラップをリセット（Excel 起動成功後は通常モードで続行）
+
+xlApp.Visible       = False
 xlApp.DisplayAlerts = False
+
+' 以降は On Error Resume Next で囲み、エラー時に xlApp.Quit を保証する
+On Error Resume Next
 
 ' --- 新規ワークブックを作成 ---
 Set wb = xlApp.Workbooks.Add
+If Err.Number <> 0 Then
+    WScript.Echo "[ERROR] ワークブックの作成に失敗しました: " & Err.Description
+    xlApp.Quit
+    WScript.Quit 1
+End If
 
 ' ============================================================
 ' シートの作成と順序の整理
@@ -83,6 +136,13 @@ shShuukei.Name = "Shuukei"  ' modSetup.InitWorkbook で "集計" にリネーム
 Set shPivot   = wb.Sheets.Add()
 shPivot.Name  = "Pivot"     ' modSetup.InitWorkbook で "ピボット" にリネームされる
 
+If Err.Number <> 0 Then
+    WScript.Echo "[ERROR] シートの作成に失敗しました: " & Err.Description
+    wb.Close False
+    xlApp.Quit
+    WScript.Quit 1
+End If
+
 ' 明示的に順序を確定する（Add の挿入位置がバージョンによって異なる場合の保険）
 wb.Sheets("main").Move    wb.Sheets(1)
 wb.Sheets("Config").Move  wb.Sheets(2)
@@ -101,15 +161,25 @@ WScript.Echo "Importing VBA modules..."
 Dim vbp
 Set vbp = wb.VBProject
 
-vbp.VBComponents.Import srcPath & "modConfig.bas"       ' 定数・マスタ読み込み
-vbp.VBComponents.Import srcPath & "modFileIO.bas"       ' ファイル選択・TSV読み込み
-vbp.VBComponents.Import srcPath & "modDataProcess.bas"  ' all シート構築・部署収集
-vbp.VBComponents.Import srcPath & "modAggregation.bas"  ' 集計・グラフ描画ロジック
-vbp.VBComponents.Import srcPath & "modUIControl.bas"    ' RunAll オーケストレーター・LogMessage
-vbp.VBComponents.Import srcPath & "modSharePoint.bas"   ' SharePoint アップロード
-vbp.VBComponents.Import srcPath & "modChart.bas"        ' グラフ作成
-vbp.VBComponents.Import srcPath & "modPivot.bas"        ' ピボットテーブル作成・更新
-vbp.VBComponents.Import srcPath & "modSetup.bas"        ' 初期化（最後にインポート: 他モジュールに依存）
+If Err.Number <> 0 Then
+    WScript.Echo "[ERROR] VBProject へのアクセスに失敗しました: " & Err.Description
+    WScript.Echo "Excel の「VBAプロジェクトオブジェクトモデルへのアクセスを信頼する」を"
+    WScript.Echo "有効にしているか確認してください。"
+    wb.Close False
+    xlApp.Quit
+    WScript.Quit 1
+End If
+
+For i = 0 To UBound(requiredModules)
+    vbp.VBComponents.Import srcPath & requiredModules(i)
+    If Err.Number <> 0 Then
+        WScript.Echo "[ERROR] モジュールのインポートに失敗しました (" & requiredModules(i) & "): " & Err.Description
+        wb.Close False
+        xlApp.Quit
+        WScript.Quit 1
+    End If
+    WScript.Echo "  Imported: " & requiredModules(i)
+Next
 WScript.Echo "Modules imported."
 
 ' ============================================================
@@ -122,14 +192,27 @@ WScript.Echo "Modules imported."
 ' ============================================================
 WScript.Echo "Running InitWorkbook..."
 xlApp.Run "modSetup.InitWorkbook"
+If Err.Number <> 0 Then
+    WScript.Echo "[ERROR] InitWorkbook の実行に失敗しました: " & Err.Description
+    wb.Close False
+    xlApp.Quit
+    WScript.Quit 1
+End If
 WScript.Echo "InitWorkbook complete."
 
 ' --- .xlsm 形式で保存 ---
 ' FileFormat 52 = xlOpenXMLMacroEnabled (.xlsm)
 ' マクロを含むため .xlsx ではなく .xlsm を使用する
 wb.SaveAs outputFile, 52
+If Err.Number <> 0 Then
+    WScript.Echo "[ERROR] ファイルの保存に失敗しました: " & Err.Description
+    wb.Close False
+    xlApp.Quit
+    WScript.Quit 1
+End If
 WScript.Echo "Saved: " & outputFile
 
+On Error GoTo 0
 xlApp.Quit
 Set xlApp = Nothing
 

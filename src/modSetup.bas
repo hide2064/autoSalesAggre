@@ -65,7 +65,7 @@ Private Sub SetupMainSheet()
     ws.Cells(1, 1).Font.Bold = True
     With ws.Rows(2)
         .Font.Bold      = True
-        .Interior.Color = RGB(200, 220, 240)
+        .Interior.Color = CLR_HEADER_BG  ' modConfig 定数: RGB(200,220,240) 水色系
     End With
     ws.Columns(1).ColumnWidth = 22
     ws.Columns(2).ColumnWidth = 80
@@ -181,7 +181,7 @@ Private Sub SetupAllSheet()
 
     With ws.Rows(1)
         .Font.Bold      = True
-        .Interior.Color = RGB(200, 220, 240)
+        .Interior.Color = CLR_HEADER_BG  ' modConfig 定数: RGB(200,220,240) 水色系
     End With
     ws.Columns("A:K").AutoFit  ' 初期列幅をデータに合わせて自動設定
 
@@ -219,7 +219,7 @@ Private Sub SetupAggrSheet()
     ws.Cells(AGGR_HDR_ROW, 4).Value = "口銭総額"
     With ws.Rows(AGGR_HDR_ROW)
         .Font.Bold      = True
-        .Interior.Color = RGB(200, 220, 240)
+        .Interior.Color = CLR_HEADER_BG  ' modConfig 定数: RGB(200,220,240) 水色系
     End With
 
     ws.Columns("A").ColumnWidth   = 30
@@ -259,7 +259,7 @@ Private Sub SetupPivotSheet()
     ws.Cells(1, 1).Font.Size = 14
     ws.Cells(2, 1).Value    = "RunAll 実行時に自動更新されます。" & _
                                "フィールドリストで行・列・フィルター・値を自由に配置できます。"
-    ws.Cells(2, 1).Font.Color = RGB(100, 100, 100)
+    ws.Cells(2, 1).Font.Color = CLR_LABEL_TEXT  ' modConfig 定数: RGB(100,100,100) グレー
     ws.Columns("A").ColumnWidth = 35
 
     ' --- 更新ボタン（タイトル行の右側に配置）---

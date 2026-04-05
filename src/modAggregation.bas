@@ -47,7 +47,7 @@ Public Sub Rebuild()
     Dim wsAll As Worksheet
     Dim lastRow As Long
     Dim allData As Variant      ' all シートデータの一括読み込み用
-    Dim dictSummary As Object   ' キー: 製品名||客先名、値: Array(金額合計, 数量合計, 口銭合計)
+    Dim dictSummary As Object   ' キー: 製品名 & DICT_KEY_SEP & 客先名、値: Array(金額合計, 数量合計, 口銭合計)
     Dim r As Long
     Dim saleDateRaw As Variant
     Dim saleDate As Date
@@ -95,7 +95,7 @@ Public Sub Rebuild()
     ' ============================================================
     ' 集計ループ: 各行にフィルタを適用し dictSummary に累積する
     '
-    ' dictSummary のキー: 「製品名 & "||" & 客先名」
+    ' dictSummary のキー: 「製品名 & DICT_KEY_SEP & 客先名」(DICT_KEY_SEP は modConfig 定数)
     ' dictSummary の値 : Array(売上金額合計, 数量合計, 口銭合計)
     ' ============================================================
     Set dictSummary = NewDict()
@@ -118,7 +118,7 @@ Public Sub Rebuild()
         ' --- フィルタ通過: 金額・数量・口銭を dictSummary に累積 ---
         pName = Trim(CStr(allData(r, ALL_COL_PROD_NAME)))
         cName = Trim(CStr(allData(r, ALL_COL_CLIENT)))
-        key   = pName & "||" & cName  ' セパレータ "||" で衝突を防ぐ
+        key   = pName & DICT_KEY_SEP & cName  ' DICT_KEY_SEP(modConfig) で衝突を防ぐ
 
         amt    = 0 : qty = 0 : margin = 0
         If IsNumeric(allData(r, ALL_COL_AMOUNT)) Then amt    = CDbl(allData(r, ALL_COL_AMOUNT))
@@ -172,7 +172,8 @@ End Sub
 ' 製品名でバブルソートしてから描画するため、表示順は常に製品名昇順。
 ' ============================================================
 Private Sub DrawAggrTable(wsAggr As Worksheet, dictSummary As Object)
-    Dim keys() As String    ' dictSummary のキーを格納する配列（ソート用）
+    Dim keys()     As String  ' dictSummary のキーを格納する配列（ソート用）
+    Dim prodKeys() As String  ' ソート比較用に Split 済みの製品名部分
     Dim i As Integer
     Dim j As Integer
     Dim tmp As String
@@ -195,17 +196,21 @@ Private Sub DrawAggrTable(wsAggr As Worksheet, dictSummary As Object)
 
     ' --- dictSummary のキーを配列に収集 ---
     ReDim keys(0 To dictSummary.Count - 1)
+    ReDim prodKeys(0 To dictSummary.Count - 1)
     i = 0
     For Each k In dictSummary.Keys
-        keys(i) = CStr(k)
+        keys(i)     = CStr(k)
+        prodKeys(i) = Split(CStr(k), DICT_KEY_SEP)(0)  ' 製品名部分を事前抽出
         i = i + 1
     Next k
 
-    ' --- 製品名部分（"||" の左側）でバブルソート（昇順）---
+    ' --- 製品名部分でバブルソート（昇順）---
+    ' prodKeys に事前抽出済みのため、ループ内で Split を繰り返さない
     For i = 0 To UBound(keys) - 1
         For j = 0 To UBound(keys) - i - 1
-            If Split(keys(j), "||")(0) > Split(keys(j + 1), "||")(0) Then
-                tmp = keys(j) : keys(j) = keys(j + 1) : keys(j + 1) = tmp
+            If prodKeys(j) > prodKeys(j + 1) Then
+                tmp = keys(j)     : keys(j)     = keys(j + 1)     : keys(j + 1)     = tmp
+                tmp = prodKeys(j) : prodKeys(j) = prodKeys(j + 1) : prodKeys(j + 1) = tmp
             End If
         Next j
     Next i
@@ -222,7 +227,7 @@ Private Sub DrawAggrTable(wsAggr As Worksheet, dictSummary As Object)
     totalAmt      = 0 : totalQty      = 0 : totalMargin      = 0
 
     For i = 0 To UBound(keys)
-        parts = Split(keys(i), "||")
+        parts = Split(keys(i), DICT_KEY_SEP)
         pName = parts(0)
         cName = parts(1)
         vals  = dictSummary(keys(i))

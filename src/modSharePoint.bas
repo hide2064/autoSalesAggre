@@ -13,24 +13,27 @@ Option Explicit
 ' 仕組み:
 '   1. Config シートの M2 から Power Automate HTTP 要求トリガーの URL を取得
 '   2. 対象シートのデータを JSON 文字列に変換
-'   3. MSXML2.XMLHTTP を使って HTTP POST で送信
-'   4. HTTP ステータス 200/202 を正常終了とみなす
+'   3. プライベート関数 SendHttpPost で HTTP POST 送信
+'   4. 戻り値の HTTP ステータスコードを元に成功/失敗を判定
+'      200 / 202 → 正常終了（Power Automate は通常 202 Accepted を返す）
+'      -1        → 通信例外
+'      その他    → HTTP エラー
 '
-' Power Automate フローの設定:
-'   ・トリガー: "HTTP 要求を受信したとき" (When a HTTP request is received)
-'   ・Content-Type: application/json
-'   ・URL を Config シートの M2 に貼り付ける
+' 拡張方法:
+'   ・新しいシートのアップロードを追加する場合は、
+'     ① JSON 組み立てロジックを持つ Public Sub を追加
+'     ② SendHttpPost を呼び出して戻り値で成否を判定
+'     ③ modSetup でボタンの OnAction に新 Sub を設定
 '
 ' 送信 JSON フォーマット（集計シート版）:
 '   {
-'     "dept":       "全部署",          // 部署フィルタ値
-'     "fromDate":   "2026/01/01",      // 開始日フィルタ値（空欄時は ""）
-'     "toDate":     "2026/03/31",      // 終了日フィルタ値（空欄時は ""）
+'     "dept":       "全部署",
+'     "fromDate":   "2026/01/01",
+'     "toDate":     "2026/03/31",
 '     "uploadedAt": "2026/04/04 12:00:00",
 '     "rows": [
 '       {"name": "製品A",       "amount": 150000, "qty": 30, "margin": 15000},
 '       {"name": "　　得意先X", "amount": 100000, "qty": 20, "margin": 10000},
-'       ...
 '       {"name": "総合計",      "amount": 200000, "qty": 40, "margin": 20000}
 '     ]
 '   }
@@ -40,11 +43,11 @@ Option Explicit
 '     "uploadedAt": "2026/04/04 12:00:00",
 '     "rows": [
 '       {
-'         "client":   "客先A",    "prodCode": "P001",
-'         "amount":   10000,      "unitPrice": 1000,
-'         "qty":      10,         "date":      "2026/01/15",
-'         "saleType": "直販",     "dept":      "営業部",
-'         "prodName": "製品A",    "margin":    1000,
+'         "client":   "客先A",   "prodCode": "P001",
+'         "amount":   10000,     "unitPrice": 1000,
+'         "qty":      10,        "date":      "2026/01/15",
+'         "saleType": "直販",    "dept":      "営業部",
+'         "prodName": "製品A",   "margin":    1000,
 '         "source":   "jan.tsv"
 '       }, ...
 '     ]
@@ -63,19 +66,11 @@ Public Sub UploadToSharePoint()
     Dim wsAggr As Worksheet
     Dim lastRow As Long
     Dim r As Long
-    Dim itemName As String
-    Dim amt As Variant
-    Dim qty As Variant
-    Dim margin As Variant
-    Dim dept As String
-    Dim fromDate As String
-    Dim toDate As String
-    Dim rowsJson As String  ' rows 配列の JSON 文字列（累積）
-    Dim sep As String       ' 配列要素間のカンマ（初回は空）
+    Dim rowsJson As String
+    Dim sep As String
     Dim jsonBody As String
-    Dim http As Object
+    Dim httpStatus As Long
 
-    ' --- URL の取得と未設定チェック ---
     paUrl = LoadPowerAutomateUrl()
     If paUrl = "" Then
         MsgBox "ConfigシートのM2にPowerAutomate URLが設定されていません。", _
@@ -84,13 +79,8 @@ Public Sub UploadToSharePoint()
     End If
 
     Set wsAggr = ThisWorkbook.Sheets(SH_AGGR)
-
-    ' --- フィルタ条件の読み取り（JSON の上位フィールドに含める）---
-    dept     = Trim(CStr(wsAggr.Range(AGGR_DEPT_CELL).Value))
-    fromDate = Trim(CStr(wsAggr.Range(AGGR_FROM_CELL).Value))
-    toDate   = Trim(CStr(wsAggr.Range(AGGR_TO_CELL).Value))
-
     lastRow = wsAggr.Cells(wsAggr.Rows.Count, 1).End(xlUp).Row
+
     If lastRow < AGGR_DATA_ROW Then
         MsgBox "集計データがありません。先にデータを集計してください。", _
                vbExclamation, "データなし"
@@ -101,35 +91,38 @@ Public Sub UploadToSharePoint()
     rowsJson = ""
     sep = ""
     For r = AGGR_DATA_ROW To lastRow
-        itemName = Trim(CStr(wsAggr.Cells(r, 1).Value))
-        If itemName = "" Then GoTo NextDataRow  ' 空行はスキップ
+        If Trim(CStr(wsAggr.Cells(r, 1).Value)) = "" Then GoTo NextRow
 
-        amt    = wsAggr.Cells(r, 2).Value
-        qty    = wsAggr.Cells(r, 3).Value
-        margin = wsAggr.Cells(r, 4).Value
-
-        ' name には字下げ込みの表示文字列（"　　客先名" や "総合計"）をそのまま使用
         rowsJson = rowsJson & sep & "{"
         rowsJson = rowsJson & """name"":"   & JsonString(wsAggr.Cells(r, 1).Value) & ","
-        rowsJson = rowsJson & """amount"":"  & JsonNumber(amt) & ","
-        rowsJson = rowsJson & """qty"":"     & JsonNumber(qty) & ","
-        rowsJson = rowsJson & """margin"":"  & JsonNumber(margin)
+        rowsJson = rowsJson & """amount"":"  & JsonNumber(wsAggr.Cells(r, 2).Value) & ","
+        rowsJson = rowsJson & """qty"":"     & JsonNumber(wsAggr.Cells(r, 3).Value) & ","
+        rowsJson = rowsJson & """margin"":"  & JsonNumber(wsAggr.Cells(r, 4).Value)
         rowsJson = rowsJson & "}"
         sep = ","
-NextDataRow:
+NextRow:
     Next r
 
     ' --- JSON ペイロード組み立て ---
     jsonBody = "{"
-    jsonBody = jsonBody & """dept"":"       & JsonString(dept)     & ","
-    jsonBody = jsonBody & """fromDate"":"   & JsonString(fromDate)  & ","
-    jsonBody = jsonBody & """toDate"":"     & JsonString(toDate)    & ","
+    jsonBody = jsonBody & """dept"":"       & JsonString(wsAggr.Range(AGGR_DEPT_CELL).Value) & ","
+    jsonBody = jsonBody & """fromDate"":"   & JsonString(wsAggr.Range(AGGR_FROM_CELL).Value) & ","
+    jsonBody = jsonBody & """toDate"":"     & JsonString(wsAggr.Range(AGGR_TO_CELL).Value)   & ","
     jsonBody = jsonBody & """uploadedAt"":" & JsonString(Format(Now(), "yyyy/mm/dd hh:mm:ss")) & ","
     jsonBody = jsonBody & """rows"":["      & rowsJson & "]"
     jsonBody = jsonBody & "}"
 
-    ' --- HTTP POST 送信 ---
-    Call SendHttpPost(paUrl, jsonBody, "SharePointアップロード完了", "SharePointアップロード失敗", "SharePointアップロード例外")
+    ' --- HTTP POST 送信と結果処理 ---
+    httpStatus = SendHttpPost(paUrl, jsonBody)
+    Select Case httpStatus
+        Case 200, 202
+            LogMessage "集計シートSharePointアップロード完了 (HTTP " & httpStatus & ")"
+            MsgBox "SharePointへのアップロードが完了しました。", vbInformation, "完了"
+        Case -1
+            ' 通信例外は SendHttpPost 内でログ済み
+        Case Else
+            MsgBox "アップロードに失敗しました。(HTTP " & httpStatus & ")", vbCritical, "エラー"
+    End Select
 End Sub
 
 ' ============================================================
@@ -142,13 +135,13 @@ Public Sub UploadAllToSharePoint()
     Dim paUrl As String
     Dim wsAll As Worksheet
     Dim lastRow As Long
-    Dim allData As Variant  ' all シートデータの一括読み込み用
+    Dim allData As Variant
     Dim r As Long
     Dim rowsJson As String
     Dim sep As String
     Dim jsonBody As String
+    Dim httpStatus As Long
 
-    ' --- URL の取得と未設定チェック ---
     paUrl = LoadPowerAutomateUrl()
     If paUrl = "" Then
         MsgBox "ConfigシートのM2にPowerAutomate URLが設定されていません。", _
@@ -194,90 +187,66 @@ Public Sub UploadAllToSharePoint()
     jsonBody = jsonBody & """rows"":["      & rowsJson & "]"
     jsonBody = jsonBody & "}"
 
-    ' --- HTTP POST 送信（成功時はログと件数メッセージを表示）---
-    Dim http As Object
-    On Error GoTo HttpErr
-    Set http = CreateObject("MSXML2.XMLHTTP")
-    http.Open "POST", paUrl, False
-    http.setRequestHeader "Content-Type", "application/json"
-    http.send jsonBody
-
-    If http.Status = 200 Or http.Status = 202 Then
-        LogMessage "allシートSharePointアップロード完了 (HTTP " & http.Status & "): " & (lastRow - 1) & "行"
-        MsgBox "allシートのSharePointへのアップロードが完了しました。" & vbCrLf & _
-               (lastRow - 1) & "件のデータを送信しました。", vbInformation, "完了"
-    Else
-        LogMessage "[エラー] allシートSharePointアップロード失敗 (HTTP " & http.Status & "): " & http.responseText
-        MsgBox "アップロードに失敗しました。" & vbCrLf & _
-               "HTTP " & http.Status & vbCrLf & http.responseText, vbCritical, "エラー"
-    End If
-    Exit Sub
-
-HttpErr:
-    LogMessage "[エラー] allシートSharePointアップロード例外: " & Err.Description
-    MsgBox "アップロード中にエラーが発生しました:" & vbCrLf & Err.Description, _
-           vbCritical, "エラー"
+    ' --- HTTP POST 送信と結果処理 ---
+    httpStatus = SendHttpPost(paUrl, jsonBody)
+    Select Case httpStatus
+        Case 200, 202
+            LogMessage "allシートSharePointアップロード完了 (HTTP " & httpStatus & "): " & (lastRow - 1) & "行"
+            MsgBox "allシートのSharePointへのアップロードが完了しました。" & vbCrLf & _
+                   (lastRow - 1) & "件のデータを送信しました。", vbInformation, "完了"
+        Case -1
+            ' 通信例外は SendHttpPost 内でログ済み
+        Case Else
+            MsgBox "アップロードに失敗しました。(HTTP " & httpStatus & ")", vbCritical, "エラー"
+    End Select
 End Sub
 
 ' ============================================================
-' SendHttpPost — HTTP POST 送信の共通処理（プライベート）
+' SendHttpPost — HTTP POST を送信して HTTP ステータスコードを返す（プライベート）
 '
 ' 引数:
-'   url          — 送信先 URL
-'   jsonBody     — 送信する JSON 文字列
-'   successLabel — ログに記録する成功時のラベル文字列
-'   failLabel    — ログに記録する失敗時のラベル文字列
-'   errLabel     — ログに記録する例外時のラベル文字列
+'   url      — 送信先 URL (Power Automate HTTP 要求トリガー)
+'   jsonBody — 送信する JSON 文字列
 '
-' HTTP 200 または 202 を正常終了とみなす。
-' Power Automate の HTTP 要求トリガーは受信後すぐに 202 Accepted を返す。
+' 戻り値:
+'   HTTP ステータスコード (Long)
+'     200 / 202 : 正常終了 (Power Automate は 202 Accepted を返すことが多い)
+'     その他正数 : HTTP エラー (呼び出し元で MsgBox 表示)
+'     -1         : 通信例外（このサブ内でログに記録済み）
+'
+' 設計方針:
+'   メッセージの表示は呼び出し元が担当する。
+'   このサブは通信のみを責務とし、例外発生時のみログを書く。
 ' ============================================================
-Private Sub SendHttpPost(url As String, jsonBody As String, _
-                         successLabel As String, failLabel As String, errLabel As String)
-    Dim http As Object
+Private Function SendHttpPost(url As String, jsonBody As String) As Long
     On Error GoTo HttpErr
 
+    Dim http As Object
     Set http = CreateObject("MSXML2.XMLHTTP")
-    http.Open "POST", url, False           ' 第3引数 False = 同期通信（完了まで待機）
+    http.Open "POST", url, False           ' False = 同期通信（完了まで待機）
     http.setRequestHeader "Content-Type", "application/json"
     http.send jsonBody
 
-    If http.Status = 200 Or http.Status = 202 Then
-        LogMessage successLabel & " (HTTP " & http.Status & ")"
-        MsgBox "SharePointへのアップロードが完了しました。", vbInformation, "完了"
-    Else
-        LogMessage "[エラー] " & failLabel & " (HTTP " & http.Status & "): " & http.responseText
-        MsgBox "アップロードに失敗しました。" & vbCrLf & _
-               "HTTP " & http.Status & vbCrLf & http.responseText, vbCritical, "エラー"
-    End If
-    Exit Sub
+    SendHttpPost = http.Status
+    Exit Function
 
 HttpErr:
-    LogMessage "[エラー] " & errLabel & ": " & Err.Description
-    MsgBox "アップロード中にエラーが発生しました:" & vbCrLf & Err.Description, _
-           vbCritical, "エラー"
-End Sub
+    LogMessage "[エラー] HTTP通信例外: " & Err.Description
+    SendHttpPost = -1
+End Function
 
 ' ============================================================
 ' JsonString — Variant 値を JSON 文字列リテラルに変換する（プライベート）
 '
-' 引数:
-'   s — 変換する値（Variant; CStr で文字列化してから処理）
+' 戻り値: ダブルクォートで囲まれた JSON 文字列（特殊文字はエスケープ済み）
 '
-' 戻り値: ダブルクォートで囲まれた JSON 文字列
-'   例: "製品A" → """製品A"""
-'
-' エスケープ処理:
-'   バックスラッシュ → "\\"
-'   ダブルクォート   → "\""
-'   CR               → "\r"
-'   LF               → "\n"
-'   タブ             → "\t"
+' エスケープ対象:  \ → \\  / " → \"  CR → \r  LF → \n  Tab → \t
+' ※バックスラッシュを最初に処理することで二重エスケープを防ぐ
 ' ============================================================
 Private Function JsonString(s As Variant) As String
     Dim str As String
     str = CStr(s)
-    str = Replace(str, "\",   "\\")   ' バックスラッシュは最初にエスケープ（二重置換防止）
+    str = Replace(str, "\",   "\\")
     str = Replace(str, """",  "\""")
     str = Replace(str, Chr(13), "\r")
     str = Replace(str, Chr(10), "\n")
@@ -288,15 +257,13 @@ End Function
 ' ============================================================
 ' JsonNumber — Variant 値を JSON 数値リテラルに変換する（プライベート）
 '
-' 引数:
-'   v — 変換する値（IsNumeric が False の場合は "0" を返す）
-'
-' 戻り値: JSON 数値文字列（整数は CLng で、小数はロケール非依存でピリオド表記）
+' 戻り値:
+'   数値の場合 : JSON 数値文字列（整数は小数点なし、小数はピリオド表記）
+'   非数値の場合: "0"
 '
 ' ロケール対応:
-'   VBA の CStr は実行環境のロケールに依存するため、
-'   小数点区切り文字がカンマになる環境（ヨーロッパ等）では
-'   Application.International(xlDecimalSeparator) を使ってピリオドに変換する。
+'   CStr の小数点記号は実行環境のロケールに依存するため、
+'   Application.International(xlDecimalSeparator) でピリオンに統一する。
 ' ============================================================
 Private Function JsonNumber(v As Variant) As String
     If Not IsNumeric(v) Then
@@ -306,10 +273,8 @@ Private Function JsonNumber(v As Variant) As String
     Dim n As Double
     n = CDbl(v)
     If n = Int(n) Then
-        ' 整数の場合は小数点なしで出力
-        JsonNumber = CStr(CLng(n))
+        JsonNumber = CStr(CLng(n))   ' 整数: 小数点なし
     Else
-        ' 小数の場合はロケール固有の小数点記号をピリオンに統一
         JsonNumber = Replace(CStr(n), _
                              Application.International(xlDecimalSeparator), ".")
     End If

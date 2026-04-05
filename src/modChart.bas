@@ -12,8 +12,8 @@ Option Explicit
 ' グラフ仕様:
 '   種類    : 集合縦棒 (xlColumnClustered)
 '   X 軸    : 製品名（製品グループ親行のみ・客先明細行と総合計行は除外）
-'   系列1   : 売上金額合計（B列、青色）
-'   系列2   : 口銭総額（D列、オレンジ色）
+'   系列1   : 売上金額合計（B列、CLR_CHART_AMT 色）
+'   系列2   : 口銭総額（D列、CLR_CHART_MARGIN 色）
 '   タイトル: 「製品別売上集計」+ 現在のフィルタ条件（部署・期間）
 '   位置    : 集計テーブル直下（lastRow + 2 行目のTop位置から）
 '   サイズ  : 幅 500pt × 高さ 300pt
@@ -26,6 +26,10 @@ Option Explicit
 ' 更新の仕組み:
 '   CHART_NAME ("AggrChart") と一致する ChartObject が既に存在する場合は
 '   削除してから新規作成することで、ボタンを何度押しても重複しない。
+'
+' 配色の変更:
+'   CLR_CHART_AMT / CLR_CHART_MARGIN は modConfig に定義された定数。
+'   modConfig の値を変えるだけで全グラフの配色が変わる。
 ' ============================================================
 
 ' グラフオブジェクトの識別に使う名前（重複防止・削除時の検索に使用）
@@ -47,22 +51,21 @@ Public Sub DrawAggrChart()
     Dim lastRow As Long
     Dim r As Long
     Dim cellVal As String
-    Dim count As Integer      ' 製品グループ親行の件数（配列サイズ）
-    Dim idx As Integer        ' 配列書き込みインデックス
-    Dim labels()     As String  ' X 軸ラベル配列（製品名）
-    Dim amtVals()    As Double  ' 系列1 データ配列（売上金額合計）
-    Dim marginVals() As Double  ' 系列2 データ配列（口銭総額）
-    Dim chartTop As Double      ' グラフの Top 位置（ポイント）
-    Dim co As ChartObject       ' 既存グラフ検索用
-    Dim newChart As ChartObject ' 新規作成したグラフオブジェクト
-    Dim titleText As String     ' グラフタイトル文字列
+    Dim count As Integer
+    Dim idx As Integer
+    Dim labels()     As String
+    Dim amtVals()    As Double
+    Dim marginVals() As Double
+    Dim chartTop As Double
+    Dim co As ChartObject
+    Dim newChart As ChartObject
+    Dim titleText As String
     Dim dept As String
     Dim fromDate As String
     Dim toDate As String
 
     Set ws = ThisWorkbook.Sheets(SH_AGGR)
 
-    ' --- データ存在チェック ---
     lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row
     If lastRow < AGGR_DATA_ROW Then
         MsgBox "集計データがありません。先にデータを集計してください。", _
@@ -105,7 +108,6 @@ Public Sub DrawAggrChart()
         cellVal = CStr(ws.Cells(r, 1).Value)
         If Left(cellVal, 2) <> "　　" And cellVal <> "総合計" And Trim(cellVal) <> "" Then
             labels(idx) = cellVal
-            ' IsNumeric チェック: 数値でない場合はデフォルト値 0.0 を維持
             If IsNumeric(ws.Cells(r, 2).Value) Then amtVals(idx)    = CDbl(ws.Cells(r, 2).Value)
             If IsNumeric(ws.Cells(r, 4).Value) Then marginVals(idx) = CDbl(ws.Cells(r, 4).Value)
             idx = idx + 1
@@ -121,8 +123,6 @@ Public Sub DrawAggrChart()
     Next co
 
     ' --- グラフタイトルをフィルタ条件から組み立て ---
-    ' 部署が "全部署" 以外の場合は "[部署名]" を付加
-    ' 日付フィルタが設定されている場合は "(開始日 ～ 終了日)" を付加
     dept     = Trim(CStr(ws.Range(AGGR_DEPT_CELL).Value))
     fromDate = Trim(CStr(ws.Range(AGGR_FROM_CELL).Value))
     toDate   = Trim(CStr(ws.Range(AGGR_TO_CELL).Value))
@@ -134,10 +134,9 @@ Public Sub DrawAggrChart()
     End If
 
     ' --- ChartObject を集計テーブル直下に作成 ---
-    ' lastRow + 2 行目の Top 座標を取得して1行分の余白を確保
     chartTop = ws.Cells(lastRow + 2, 1).Top
     Set newChart = ws.ChartObjects.Add( _
-        Left:=ws.Cells(1, 1).Left, _  ' A列の左端に揃える
+        Left:=ws.Cells(1, 1).Left, _
         Top:=chartTop, _
         Width:=500, _
         Height:=300)
@@ -147,50 +146,50 @@ Public Sub DrawAggrChart()
     ' グラフの詳細設定
     ' ============================================================
     With newChart.Chart
-        .ChartType = xlColumnClustered  ' 集合縦棒グラフ
+        .ChartType = xlColumnClustered
 
-        ' --- 系列1: 売上金額合計（青色）---
+        ' --- 系列1: 売上金額合計 ---
         .SeriesCollection.NewSeries
         With .SeriesCollection(1)
-            .Name    = "売上金額合計"
-            .Values  = amtVals       ' Y 軸データ
-            .XValues = labels        ' X 軸ラベル（系列1 に設定することで全系列に適用）
-            .Interior.Color = RGB(70, 130, 180)  ' スチールブルー
+            .Name           = "売上金額合計"
+            .Values         = amtVals
+            .XValues        = labels
+            .Interior.Color = CLR_CHART_AMT  ' modConfig 定数: RGB(70,130,180) 鋼鉄青
         End With
 
-        ' --- 系列2: 口銭総額（オレンジ色）---
+        ' --- 系列2: 口銭総額 ---
         .SeriesCollection.NewSeries
         With .SeriesCollection(2)
-            .Name   = "口銭総額"
-            .Values = marginVals
-            .Interior.Color = RGB(255, 165, 0)  ' オレンジ
+            .Name           = "口銭総額"
+            .Values         = marginVals
+            .Interior.Color = CLR_CHART_MARGIN  ' modConfig 定数: RGB(255,165,0) オレンジ
         End With
 
-        ' --- タイトル設定 ---
-        .HasTitle          = True
-        .ChartTitle.Text   = titleText
+        ' --- タイトル ---
+        .HasTitle             = True
+        .ChartTitle.Text      = titleText
         .ChartTitle.Font.Size = 12
 
-        ' --- 軸設定 ---
-        .Axes(xlCategory).HasTitle = False             ' X 軸タイトルは不要（製品名が明確なため）
+        ' --- 軸 ---
+        .Axes(xlCategory).HasTitle = False
         .Axes(xlValue).HasTitle    = True
-        .Axes(xlValue).AxisTitle.Text     = "金額（円）"
-        .Axes(xlValue).TickLabels.NumberFormat = "#,##0"  ' 縦軸の目盛を千区切り表示
+        .Axes(xlValue).AxisTitle.Text          = "金額（円）"
+        .Axes(xlValue).TickLabels.NumberFormat = "#,##0"
 
-        ' --- 凡例設定 ---
-        .HasLegend        = True
-        .Legend.Position  = xlLegendPositionBottom  ' 凡例をグラフ下部に表示
+        ' --- 凡例 ---
+        .HasLegend       = True
+        .Legend.Position = xlLegendPositionBottom
 
-        ' --- データラベル（系列1のみ: 棒の上部に金額を表示）---
+        ' --- 系列1 データラベル: 棒の上端外側に金額を表示 ---
         .SeriesCollection(1).HasDataLabels = True
         With .SeriesCollection(1).DataLabels
-            .NumberFormat = "#,##0"               ' 千区切り表示
-            .Position     = xlLabelPositionOutsideEnd  ' 棒の上端の外側
+            .NumberFormat = "#,##0"
+            .Position     = xlLabelPositionOutsideEnd
             .Font.Size    = 8
         End With
 
-        ' --- プロットエリアの背景色をわずかに調整（視認性向上）---
-        .PlotArea.Interior.Color = RGB(248, 248, 248)  ' 薄いグレー背景
+        ' --- プロットエリアの背景色 ---
+        .PlotArea.Interior.Color = CLR_PLOT_AREA  ' modConfig 定数: RGB(248,248,248)
     End With
 
     LogMessage "グラフを作成しました（" & count & "製品）"

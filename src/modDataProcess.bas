@@ -101,9 +101,12 @@ Private Function ProcessSourceSheet(wsSrc As Worksheet, wsAll As Worksheet, _
     startRow As Long, dictProduct As Object, dictCommission As Object, _
     dictHeaderMap As Object) As Long
 
-    Dim lastSrcRow As Long   ' ソースシートの最終行
+    Dim lastSrcRow As Long    ' ソースシートの最終行
     Dim lastSrcCol As Integer ' ソースシートの最終列
-    Dim colMap(7) As Integer  ' all 列インデックス(0始まり) → ソース列番号 のマッピング
+    ' colMap: all シートの TSV 由来列(CLIENT〜DEPT)と ソース列番号の対応表
+    '   インデックス: ALL_COL_xxx - 1 (0始まり)  値: ソース列番号 (0=マップなし)
+    '   サイズ COL_MAP_COUNT-1 = ALL_COL_DEPT-1 = 7 (インデックス 0〜7 の 8要素)
+    Dim colMap(COL_MAP_COUNT - 1) As Integer
     Dim c As Integer
     Dim srcHeader As String   ' ソースシートのヘッダー文字列（小文字化して辞書検索）
     Dim srcData As Variant    ' ソースシートのデータ一括読み込み用
@@ -132,6 +135,8 @@ Private Function ProcessSourceSheet(wsSrc As Worksheet, wsAll As Worksheet, _
     ' 後続処理で空文字として扱われる。
     ' ============================================================
     For c = 1 To lastSrcCol
+        ' LCase で正規化: dictHeaderMap は vbTextCompare だが
+        ' キーが LCase で登録されているため明示的に揃える
         srcHeader = LCase(Trim(CStr(wsSrc.Cells(1, c).Value)))
         If dictHeaderMap.Exists(srcHeader) Then
             Select Case dictHeaderMap(srcHeader)

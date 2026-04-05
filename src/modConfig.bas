@@ -6,7 +6,7 @@ Option Explicit
 '
 ' 役割:
 '   ・ワークブック全体で使う定数（列番号・シート名・セルアドレス・
-'     HDR_* ヘッダー文字列）を一元管理する。
+'     HDR_* ヘッダー文字列・UI 色）を一元管理する。
 '   ・Scripting.Dictionary の生成ファクトリ関数 NewDict() を提供する。
 '   ・Config シートから製品マスタ・口銭マスタ・ヘッダー名寄せ・
 '     Power Automate URL を読み込む関数群を提供する。
@@ -19,6 +19,10 @@ Option Explicit
 '     共通して参照される唯一の真実の源(single source of truth)。
 '   ・NewDict() を経由することで、全モジュールが同一の
 '     大文字小文字を無視する(vbTextCompare)辞書を使用できる。
+'   ・CLR_* 色定数を定義することで、配色変更を1箇所で完結させる。
+'     値は RGB(r,g,b) = r + g*256 + b*65536 で事前計算した Long 値。
+'   ・DICT_KEY_SEP をキーセパレータの唯一の定義とし、
+'     modAggregation での辞書キー生成・分解を一元化する。
 ' ============================================================
 
 ' ============================================================
@@ -67,20 +71,45 @@ Public Const ALL_COL_UNIT_PRICE As Integer = 4   ' D: 製品単価
 Public Const ALL_COL_QTY        As Integer = 5   ' E: 売上数量
 Public Const ALL_COL_DATE       As Integer = 6   ' F: 売上発生日
 Public Const ALL_COL_SALE_TYPE  As Integer = 7   ' G: 売上種別
-Public Const ALL_COL_DEPT       As Integer = 8   ' H: 部署
+Public Const ALL_COL_DEPT       As Integer = 8   ' H: 部署           ← TSV由来の最終列
 Public Const ALL_COL_PROD_NAME  As Integer = 9   ' I: 製品名 (製品マスタから計算)
 Public Const ALL_COL_MARGIN     As Integer = 10  ' J: 部署取り分 (売上金額×口銭率で計算)
 Public Const ALL_COL_SOURCE     As Integer = 11  ' K: ソースファイル名 (拡張子なし)
 Public Const ALL_TOTAL_COLS     As Integer = 11  ' all シートの総列数
 
+' TSV列からallシート列へのマッピング配列サイズ
+' ProcessSourceSheet の colMap 配列はインデックス 0〜(COL_MAP_COUNT-1) を使う
+' = ALL_COL_CLIENT-1 〜 ALL_COL_DEPT-1 の範囲 (現在は 0〜7 = 8要素)
+Public Const COL_MAP_COUNT As Integer = 8  ' ALL_COL_DEPT - ALL_COL_CLIENT + 1
+
 ' ============================================================
 ' シート名定数
 ' ============================================================
-Public Const SH_MAIN   As String = "main"    ' 実行ログ・操作ボタン
-Public Const SH_CONFIG As String = "Config"  ' マスタ・設定値
-Public Const SH_ALL    As String = "all"     ' 全ソースデータ集約
-Public Const SH_AGGR   As String = "集計"   ' 部署・日付フィルタ付き集計表示
+Public Const SH_MAIN   As String = "main"     ' 実行ログ・操作ボタン
+Public Const SH_CONFIG As String = "Config"   ' マスタ・設定値
+Public Const SH_ALL    As String = "all"      ' 全ソースデータ集約
+Public Const SH_AGGR   As String = "集計"    ' 部署・日付フィルタ付き集計表示
 Public Const SH_PIVOT  As String = "ピボット" ' Excel ネイティブ PivotTable
+
+' ============================================================
+' UI 色定数
+' 算出式: CLR = R + G*256 + B*65536
+' 変更時はここだけ修正すれば全シート・全グラフに反映される。
+' ============================================================
+Public Const CLR_HEADER_BG    As Long = 15785160  ' RGB(200,220,240) ヘッダー行の青系背景
+Public Const CLR_GROUP_ROW    As Long = 14474460  ' RGB(220,220,220) 集計グループ行のグレー背景
+Public Const CLR_CHART_AMT    As Long = 11829830  ' RGB( 70,130,180) グラフ 売上金額棒（鋼鉄青）
+Public Const CLR_CHART_MARGIN As Long = 42495     ' RGB(255,165,  0) グラフ 口銭総額棒（オレンジ）
+Public Const CLR_PLOT_AREA    As Long = 16316664  ' RGB(248,248,248) グラフ プロットエリア薄グレー
+Public Const CLR_LABEL_TEXT   As Long = 6579300   ' RGB(100,100,100) 説明文などの薄いテキスト色
+
+' ============================================================
+' 集計キーのセパレータ定数
+' dictSummary のキー形式: 製品名 & DICT_KEY_SEP & 客先名
+' "||" は通常テキストに含まれにくい文字列を選択。
+' modAggregation でのキー生成・Split 両方に使用する。
+' ============================================================
+Public Const DICT_KEY_SEP As String = "||"
 
 ' ============================================================
 ' 集計シート — セルアドレス・行番号定数
@@ -162,9 +191,16 @@ Public Function LoadProductDict() As Object
     r = CFG_PRODUCT_HDR_ROW + 1
     Do While Trim(CStr(ws.Cells(r, CFG_PRODUCT_COL).Value)) <> ""
         code = Trim(CStr(ws.Cells(r, CFG_PRODUCT_COL).Value))
-        If Not dict.Exists(code) Then
-            ' B列(製品コード列+1)から製品名を取得
-            dict(code) = Trim(CStr(ws.Cells(r, CFG_PRODUCT_COL + 1).Value))
+        If dict.Exists(code) Then
+            ' 同一コードの2件目以降は先着優先で無視するが警告を記録する
+            Debug.Print "modConfig: 製品コード重複 [" & code & "] 行" & r & " (先着優先で無視)"
+        Else
+            Dim prodName As String
+            prodName = Trim(CStr(ws.Cells(r, CFG_PRODUCT_COL + 1).Value))
+            If prodName = "" Then
+                Debug.Print "modConfig: 製品名が空です [コード=" & code & "] 行" & r
+            End If
+            dict(code) = prodName
         End If
         r = r + 1
     Loop
