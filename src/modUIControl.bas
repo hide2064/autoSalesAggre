@@ -72,6 +72,12 @@ Public Sub RunAll()
         GoTo Cleanup
     End If
 
+    ' --- 前回読み込んだファイルシートをすべて削除 ---
+    ' 新しいファイル群だけがワークブックに残るようにするため、
+    ' ファイル読み込みを開始する前に旧ソースシートを一括消去する。
+    ClearSourceSheets
+    LogMessage "旧ファイルシートをクリアしました"
+
     LogMessage CStr(UBound(files)) & "件のファイルを読み込みます"
 
     ' --- 選択されたファイルを順次読み込む（拡張子に応じてローダーを自動選択）---
@@ -194,6 +200,9 @@ Public Sub RunAllHeadless(folderPath As String)
     End If
 
     LogMessage fileCount & "件のファイルを処理します"
+
+    ' --- 前回読み込んだファイルシートをすべて削除 ---
+    ClearSourceSheets
 
     ' --- マスタ読み込み ---
     Set dictProduct    = LoadProductDict()

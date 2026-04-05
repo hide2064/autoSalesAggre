@@ -21,6 +21,52 @@ Option Explicit
 ' ============================================================
 
 ' ============================================================
+' ClearSourceSheets — 前回読み込み分のソースシートをすべて削除する
+'
+' システム用固定シート以外のシートをすべて削除する。
+' RunAll / RunAllHeadless でファイル読み込みを開始する前に呼び出すことで
+' 前回のファイル読み込みで作成されたシートを消去し、常に最新のファイルだけが
+' ワークブックに残るようにする。
+'
+' 削除対象外: SH_MAIN / SH_CONFIG / SH_ALL / SH_AGGR /
+'             SH_PIVOT / SH_ERROR / SH_MONTHLY
+'
+' 設計:
+'   削除しながら ThisWorkbook.Sheets をループすると参照ずれが発生するため、
+'   先に削除対象シート名を配列に収集してからまとめて削除する。
+' ============================================================
+Public Sub ClearSourceSheets()
+    Dim ws As Worksheet
+    Dim targets() As String
+    Dim count As Integer
+    Dim i As Integer
+
+    ' --- 削除対象シート名を先に収集 ---
+    count = 0
+    For Each ws In ThisWorkbook.Sheets
+        Select Case ws.Name
+            Case SH_MAIN, SH_CONFIG, SH_ALL, SH_AGGR, SH_PIVOT, SH_ERROR, SH_MONTHLY
+                ' システム固定シートはスキップ
+            Case Else
+                ReDim Preserve targets(count)
+                targets(count) = ws.Name
+                count = count + 1
+        End Select
+    Next ws
+
+    If count = 0 Then Exit Sub
+
+    ' --- 収集したシートを削除 ---
+    Application.DisplayAlerts = False
+    For i = 0 To count - 1
+        On Error Resume Next
+        ThisWorkbook.Sheets(targets(i)).Delete
+        On Error GoTo 0
+    Next i
+    Application.DisplayAlerts = True
+End Sub
+
+' ============================================================
 ' SelectFiles — ファイルの複数選択ダイアログを表示する
 '
 ' 対応拡張子: .tsv .txt .csv .xlsx .xls .xlsm
