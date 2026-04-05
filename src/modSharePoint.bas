@@ -142,9 +142,10 @@ Public Sub UploadAllToSharePoint()
     Dim jsonBody As String
     Dim httpStatus As Long
 
-    paUrl = LoadPowerAutomateUrl()
+    ' M3（全データ送信用）を優先し、未設定の場合は M2 にフォールバック
+    paUrl = LoadPowerAutomateUrlAll()
     If paUrl = "" Then
-        MsgBox "ConfigシートのM2にPowerAutomate URLが設定されていません。", _
+        MsgBox "ConfigシートのM2またはM3にPowerAutomate URLが設定されていません。", _
                vbExclamation, "設定エラー"
         Exit Sub
     End If
