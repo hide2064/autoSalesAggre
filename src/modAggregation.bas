@@ -24,6 +24,14 @@ Public Sub Rebuild()
     Dim qty As Double
     Dim margin As Double
     Dim existing As Variant
+    Dim totalCols As Integer
+    Dim colDept     As Integer
+    Dim colDate     As Integer
+    Dim colClient   As Integer
+    Dim colAmount   As Integer
+    Dim colQty      As Integer
+    Dim colProdName As Integer
+    Dim colMargin   As Integer
 
     Set wsAggr = ThisWorkbook.Sheets(SH_AGGR)
 
@@ -34,11 +42,11 @@ Public Sub Rebuild()
 
     ' Validate date inputs
     If fromDateRaw <> "" And Not IsDate(fromDateRaw) Then
-        MsgBox "é–‹å§‹æ—¥ã®å½¢å¼ãŒæ­£ã—ãã‚ã‚Šã¾ã›ã‚“ã€‚", vbExclamation, "å…¥åŠ›ã‚¨ãƒ©ãƒ¼"
+        MsgBox "ŠJn“ú‚ÌŒ`®‚ª³‚µ‚­‚ ‚è‚Ü‚¹‚ñB", vbExclamation, "“ü—ÍƒGƒ‰["
         Exit Sub
     End If
     If toDateRaw <> "" And Not IsDate(toDateRaw) Then
-        MsgBox "çµ‚äº†æ—¥ã®å½¢å¼ãŒæ­£ã—ãã‚ã‚Šã¾ã›ã‚“ã€‚", vbExclamation, "å…¥åŠ›ã‚¨ãƒ©ãƒ¼"
+        MsgBox "I—¹“ú‚ÌŒ`®‚ª³‚µ‚­‚ ‚è‚Ü‚¹‚ñB", vbExclamation, "“ü—ÍƒGƒ‰["
         Exit Sub
     End If
 
@@ -54,22 +62,40 @@ Public Sub Rebuild()
     If lastRow < 2 Then Exit Sub
     ClearAggrTable wsAggr
 
-    allData = wsAll.Range(wsAll.Cells(2, 1), wsAll.Cells(lastRow, ALL_TOTAL_COLS)).Value
+    ' —ñƒCƒ“ƒfƒbƒNƒX‚ğ“®“I‰ğŒˆ
+    colDept     = GetAllColIndex(wsAll, HDR_DEPT)
+    colDate     = GetAllColIndex(wsAll, HDR_DATE)
+    colClient   = GetAllColIndex(wsAll, HDR_CLIENT)
+    colAmount   = GetAllColIndex(wsAll, HDR_AMOUNT)
+    colQty      = GetAllColIndex(wsAll, HDR_QTY)
+    colProdName = GetAllColIndex(wsAll, HDR_PROD_NAME)
+    colMargin   = GetAllColIndex(wsAll, HDR_MARGIN)
+
+    If colProdName = 0 Or colClient = 0 Then
+        LogMessage "[ƒGƒ‰[] WŒv‚É•K—v‚È—ñi»•i–¼E‹qæ–¼j‚ªallƒV[ƒg‚ÉŒ©‚Â‚©‚è‚Ü‚¹‚ñ"
+        Exit Sub
+    End If
+
+    totalCols = wsAll.Cells(1, wsAll.Columns.Count).End(xlToLeft).Column
+    allData = wsAll.Range(wsAll.Cells(2, 1), wsAll.Cells(lastRow, totalCols)).Value
 
     ' Aggregate into dictSummary
-    ' Key:   è£½å“å & "||" & å®¢å…ˆå
-    ' Value: Array(å£²ä¸Šé‡‘é¡åˆè¨ˆ, æ•°é‡åˆè¨ˆ, å£éŠ­åˆè¨ˆ)
+    ' Key:   »•i–¼ & "||" & ‹qæ–¼
+    ' Value: Array(”„ã‹àŠz‡Œv, ”—Ê‡Œv, Œû‘K‡Œv)
     Set dictSummary = NewDict()
 
     For r = 1 To UBound(allData, 1)
         ' Dept filter
-        If selectedDept <> "å…¨éƒ¨ç½²" And selectedDept <> "" Then
-            If Trim(CStr(allData(r, ALL_COL_DEPT))) <> selectedDept Then GoTo NextRow
+        If selectedDept <> "‘S•”" And selectedDept <> "" Then
+            If colDept > 0 Then
+                If Trim(CStr(allData(r, colDept))) <> selectedDept Then GoTo NextRow
+            End If
         End If
 
         ' Date filter
         If useFrom Or useTo Then
-            saleDateRaw = allData(r, ALL_COL_DATE)
+            If colDate = 0 Then GoTo NextRow
+            saleDateRaw = allData(r, colDate)
             If Not IsDate(saleDateRaw) Then GoTo NextRow
             saleDate = CDate(saleDateRaw)
             If useFrom And saleDate < fromDate Then GoTo NextRow
@@ -77,14 +103,21 @@ Public Sub Rebuild()
         End If
 
         ' Accumulate totals
-        pName = Trim(CStr(allData(r, ALL_COL_PROD_NAME)))
-        cName = Trim(CStr(allData(r, ALL_COL_CLIENT)))
+        pName = Trim(CStr(allData(r, colProdName)))
+        cName = ""
+        If colClient > 0 Then cName = Trim(CStr(allData(r, colClient)))
         key = pName & "||" & cName
 
         amt = 0: qty = 0: margin = 0
-        If IsNumeric(allData(r, ALL_COL_AMOUNT)) Then amt = CDbl(allData(r, ALL_COL_AMOUNT))
-        If IsNumeric(allData(r, ALL_COL_QTY)) Then qty = CDbl(allData(r, ALL_COL_QTY))
-        If IsNumeric(allData(r, ALL_COL_MARGIN)) Then margin = CDbl(allData(r, ALL_COL_MARGIN))
+        If colAmount > 0 Then
+            If IsNumeric(allData(r, colAmount)) Then amt = CDbl(allData(r, colAmount))
+        End If
+        If colQty > 0 Then
+            If IsNumeric(allData(r, colQty)) Then qty = CDbl(allData(r, colQty))
+        End If
+        If colMargin > 0 Then
+            If IsNumeric(allData(r, colMargin)) Then margin = CDbl(allData(r, colMargin))
+        End If
 
         If dictSummary.Exists(key) Then
             existing = dictSummary(key)
@@ -180,7 +213,7 @@ Private Sub DrawAggrTable(wsAggr As Worksheet, dictSummary As Object)
         End If
 
         ' Client row
-        wsAggr.Cells(currentRow, 1).Value = "ã€€ã€€" & cName
+        wsAggr.Cells(currentRow, 1).Value = "@@" & cName
         wsAggr.Cells(currentRow, 2).Value = vals(0)
         wsAggr.Cells(currentRow, 3).Value = vals(1)
         wsAggr.Cells(currentRow, 4).Value = vals(2)
@@ -207,7 +240,7 @@ Private Sub DrawAggrTable(wsAggr As Worksheet, dictSummary As Object)
         .Font.Bold = True
         .Borders(xlEdgeTop).LineStyle = xlContinuous
     End With
-    wsAggr.Cells(currentRow, 1).Value = "ç·åˆè¨ˆ"
+    wsAggr.Cells(currentRow, 1).Value = "‘‡Œv"
     wsAggr.Cells(currentRow, 2).Value = totalAmt
     wsAggr.Cells(currentRow, 3).Value = totalQty
     wsAggr.Cells(currentRow, 4).Value = totalMargin
