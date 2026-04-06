@@ -2,41 +2,42 @@ Attribute VB_Name = "modConfig"
 Option Explicit
 
 ' ===== Config sheet table positions =====
-Public Const CFG_PRODUCT_HDR_ROW    As Integer = 2   ' è£½å“ãƒã‚¹ã‚¿ header row (A2)
-Public Const CFG_PRODUCT_COL        As Integer = 1   ' A: è£½å“ã‚³ãƒ¼ãƒ‰
-Public Const CFG_COMMISSION_HDR_ROW As Integer = 2   ' å£éŠ­ãƒã‚¹ã‚¿ header row (D2)
-Public Const CFG_COMMISSION_COL     As Integer = 4   ' D: å£²ä¸Šç¨®åˆ¥
-Public Const CFG_HEADER_HDR_ROW     As Integer = 2   ' åå¯„ã› header row (G2)
-Public Const CFG_HEADER_COL         As Integer = 7   ' G: æ­£è¦å
-Public Const CFG_DEPT_HDR_ROW       As Integer = 2   ' éƒ¨ç½²ãƒªã‚¹ãƒˆ header row (J2)
-Public Const CFG_DEPT_COL           As Integer = 10  ' J: éƒ¨ç½²ãƒªã‚¹ãƒˆ
+Public Const CFG_PRODUCT_HDR_ROW    As Integer = 2   ' »•iƒ}ƒXƒ^ header row (A2)
+Public Const CFG_PRODUCT_COL        As Integer = 1   ' A: »•iƒR[ƒh
+Public Const CFG_COMMISSION_HDR_ROW As Integer = 2   ' Œû‘Kƒ}ƒXƒ^ header row (D2)
+Public Const CFG_COMMISSION_COL     As Integer = 4   ' D: ”„ãí•Ê
+Public Const CFG_HEADER_HDR_ROW     As Integer = 2   ' –¼Šñ‚¹ header row (G2)
+Public Const CFG_HEADER_COL         As Integer = 7   ' G: ³‹K–¼
+Public Const CFG_ALL_COL_NAME       As Integer = 9   ' I: AllƒV[ƒg—ñ–¼
+Public Const CFG_DEPT_HDR_ROW       As Integer = 2   ' •”ƒŠƒXƒg header row (J2)
+Public Const CFG_DEPT_COL           As Integer = 10  ' J: •”ƒŠƒXƒg
 
 ' ===== SharePoint / Power Automate =====
-Public Const CFG_PA_LABEL_COL As Integer = 12  ' L: ãƒ©ãƒ™ãƒ«åˆ—
-Public Const CFG_PA_URL_COL   As Integer = 13  ' M: URLå€¤åˆ—
-Public Const CFG_PA_URL_ROW   As Integer = 2   ' PowerAutomate URLè¡Œ (M2)
+Public Const CFG_PA_LABEL_COL As Integer = 12  ' L: ƒ‰ƒxƒ‹—ñ
+Public Const CFG_PA_URL_COL   As Integer = 13  ' M: URL’l—ñ
+Public Const CFG_PA_URL_ROW   As Integer = 2   ' PowerAutomate URLs (M2)
 
 ' ===== all sheet column indices (1-based) =====
-Public Const ALL_COL_CLIENT     As Integer = 1   ' å®¢å…ˆå
-Public Const ALL_COL_PROD_CODE  As Integer = 2   ' è£½å“ã‚³ãƒ¼ãƒ‰
-Public Const ALL_COL_AMOUNT     As Integer = 3   ' å£²ä¸Šé‡‘é¡
-Public Const ALL_COL_UNIT_PRICE As Integer = 4   ' è£½å“å˜ä¾¡
-Public Const ALL_COL_QTY        As Integer = 5   ' å£²ä¸Šæ•°é‡
-Public Const ALL_COL_DATE       As Integer = 6   ' å£²ä¸Šç™ºç”Ÿæ—¥
-Public Const ALL_COL_SALE_TYPE  As Integer = 7   ' å£²ä¸Šç¨®åˆ¥
-Public Const ALL_COL_DEPT       As Integer = 8   ' éƒ¨ç½²
-Public Const ALL_COL_PROD_NAME  As Integer = 9   ' è£½å“å (calculated)
-Public Const ALL_COL_MARGIN     As Integer = 10  ' éƒ¨ç½²å–ã‚Šåˆ† (calculated)
-Public Const ALL_COL_SOURCE     As Integer = 11  ' ã‚½ãƒ¼ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«
+Public Const ALL_COL_CLIENT     As Integer = 1   ' ‹qæ–¼
+Public Const ALL_COL_PROD_CODE  As Integer = 2   ' »•iƒR[ƒh
+Public Const ALL_COL_AMOUNT     As Integer = 3   ' ”„ã‹àŠz
+Public Const ALL_COL_UNIT_PRICE As Integer = 4   ' »•i’P‰¿
+Public Const ALL_COL_QTY        As Integer = 5   ' ”„ã”—Ê
+Public Const ALL_COL_DATE       As Integer = 6   ' ”„ã”­¶“ú
+Public Const ALL_COL_SALE_TYPE  As Integer = 7   ' ”„ãí•Ê
+Public Const ALL_COL_DEPT       As Integer = 8   ' •”
+Public Const ALL_COL_PROD_NAME  As Integer = 9   ' »•i–¼ (calculated)
+Public Const ALL_COL_MARGIN     As Integer = 10  ' •”æ‚è•ª (calculated)
+Public Const ALL_COL_SOURCE     As Integer = 11  ' ƒ\[ƒXƒtƒ@ƒCƒ‹
 Public Const ALL_TOTAL_COLS     As Integer = 11
 
 ' ===== Sheet names =====
 Public Const SH_MAIN   As String = "main"
 Public Const SH_CONFIG As String = "Config"
 Public Const SH_ALL    As String = "all"
-Public Const SH_AGGR   As String = "é›†è¨ˆ"
+Public Const SH_AGGR   As String = "WŒv"
 
-' ===== é›†è¨ˆ sheet cell addresses =====
+' ===== WŒv sheet cell addresses =====
 Public Const AGGR_DEPT_CELL As String = "B1"
 Public Const AGGR_FROM_CELL As String = "B2"
 Public Const AGGR_TO_CELL   As String = "B3"
@@ -47,17 +48,17 @@ Public Const AGGR_DATA_ROW  As Integer = 6
 Public Const MAIN_LOG_START_ROW As Integer = 3
 
 ' ===== Canonical column header names (used in all sheet header + header map) =====
-Public Const HDR_CLIENT     As String = "å®¢å…ˆå"
-Public Const HDR_PROD_CODE  As String = "è£½å“ã‚³ãƒ¼ãƒ‰"
-Public Const HDR_AMOUNT     As String = "å£²ä¸Šé‡‘é¡"
-Public Const HDR_UNIT_PRICE As String = "è£½å“å˜ä¾¡"
-Public Const HDR_QTY        As String = "å£²ä¸Šæ•°é‡"
-Public Const HDR_DATE       As String = "å£²ä¸Šç™ºç”Ÿæ—¥"
-Public Const HDR_SALE_TYPE  As String = "å£²ä¸Šç¨®åˆ¥"
-Public Const HDR_DEPT       As String = "éƒ¨ç½²"
-Public Const HDR_PROD_NAME  As String = "è£½å“å"
-Public Const HDR_MARGIN     As String = "éƒ¨ç½²å–ã‚Šåˆ†"
-Public Const HDR_SOURCE     As String = "ã‚½ãƒ¼ã‚¹ãƒ•ã‚¡ã‚¤ãƒ«"
+Public Const HDR_CLIENT     As String = "‹qæ–¼"
+Public Const HDR_PROD_CODE  As String = "»•iƒR[ƒh"
+Public Const HDR_AMOUNT     As String = "”„ã‹àŠz"
+Public Const HDR_UNIT_PRICE As String = "»•i’P‰¿"
+Public Const HDR_QTY        As String = "”„ã”—Ê"
+Public Const HDR_DATE       As String = "”„ã”­¶“ú"
+Public Const HDR_SALE_TYPE  As String = "”„ãí•Ê"
+Public Const HDR_DEPT       As String = "•”"
+Public Const HDR_PROD_NAME  As String = "»•i–¼"
+Public Const HDR_MARGIN     As String = "•”æ‚è•ª"
+Public Const HDR_SOURCE     As String = "ƒ\[ƒXƒtƒ@ƒCƒ‹"
 
 ' ---------- Master loading ----------
 
@@ -110,7 +111,7 @@ Public Function LoadCommissionDict() As Object
                 dict(stype) = CDbl(rateVal)
             Else
                 dict(stype) = 0
-                Debug.Print "modConfig: å£éŠ­æ¯”ç‡ãŒæ•°å€¤ã§ã‚ã‚Šã¾ã›ã‚“ [" & stype & "] = " & CStr(rateVal)
+                Debug.Print "modConfig: Œû‘K”ä—¦‚ª”’l‚Å‚ ‚è‚Ü‚¹‚ñ [" & stype & "] = " & CStr(rateVal)
             End If
         End If
         r = r + 1
@@ -159,6 +160,43 @@ Public Function LoadPowerAutomateUrl() As String
     LoadPowerAutomateUrl = Trim(CStr(ws.Cells(CFG_PA_URL_ROW, CFG_PA_URL_COL).Value))
 End Function
 
+Public Function LoadAllColDef() As Object
+    Dim dict As Object
+    Dim ws As Worksheet
+    Dim r As Long
+    Dim canonical As String
+    Dim allColName As String
+
+    Set dict = NewDict()
+    Set ws = ThisWorkbook.Sheets(SH_CONFIG)
+
+    r = CFG_HEADER_HDR_ROW + 1
+    Do While Trim(CStr(ws.Cells(r, CFG_HEADER_COL).Value)) <> ""
+        canonical  = Trim(CStr(ws.Cells(r, CFG_HEADER_COL).Value))
+        allColName = Trim(CStr(ws.Cells(r, CFG_ALL_COL_NAME).Value))
+        If allColName <> "" And Not dict.Exists(canonical) Then
+            dict(canonical) = allColName
+        End If
+        r = r + 1
+    Loop
+
+    Set LoadAllColDef = dict
+End Function
+
+Public Function GetAllColIndex(wsAll As Worksheet, headerName As String) As Integer
+    Dim lastCol As Integer
+    Dim c As Integer
+
+    lastCol = wsAll.Cells(1, wsAll.Columns.Count).End(xlToLeft).Column
+    For c = 1 To lastCol
+        If Trim(CStr(wsAll.Cells(1, c).Value)) = headerName Then
+            GetAllColIndex = c
+            Exit Function
+        End If
+    Next c
+    GetAllColIndex = 0
+End Function
+
 Public Sub RefreshDeptList(dictDept As Object)
     Dim ws As Worksheet
     Dim clearRow As Long
@@ -176,8 +214,8 @@ Public Sub RefreshDeptList(dictDept As Object)
         clearRow = clearRow + 1
     Loop
 
-    ' J2 = "å…¨éƒ¨ç½²" (fixed)
-    ws.Cells(CFG_DEPT_HDR_ROW, CFG_DEPT_COL).Value = "å…¨éƒ¨ç½²"
+    ' J2 = "‘S•”" (fixed)
+    ws.Cells(CFG_DEPT_HDR_ROW, CFG_DEPT_COL).Value = "‘S•”"
 
     ' Write unique depts from J3
     r = CFG_DEPT_HDR_ROW + 1
@@ -188,7 +226,7 @@ Public Sub RefreshDeptList(dictDept As Object)
 
     lastDeptRow = r - 1
 
-    ' Update é›†è¨ˆ!B1 dropdown
+    ' Update WŒv!B1 dropdown
     Set wsAggr = ThisWorkbook.Sheets(SH_AGGR)
     With wsAggr.Range(AGGR_DEPT_CELL).Validation
         .Delete
@@ -198,6 +236,6 @@ Public Sub RefreshDeptList(dictDept As Object)
     End With
 
     If Trim(CStr(wsAggr.Range(AGGR_DEPT_CELL).Value)) = "" Then
-        wsAggr.Range(AGGR_DEPT_CELL).Value = "å…¨éƒ¨ç½²"
+        wsAggr.Range(AGGR_DEPT_CELL).Value = "‘S•”"
     End If
 End Sub
