@@ -2,7 +2,7 @@ Attribute VB_Name = "modSetup"
 Option Explicit
 
 Public Sub InitWorkbook()
-    ' Step 1: Rename placeholder sheet to é›†è¨ˆ
+    ' Step 1: Rename placeholder sheet to WŒv
     Dim ws As Worksheet
     For Each ws In ThisWorkbook.Sheets
         If ws.Name = "Shuukei" Or ws.Name = "Sheet4" Or ws.Name = "Sheet3" Then
@@ -23,9 +23,9 @@ Private Sub SetupMainSheet()
     Dim btn As Object
 
     Set ws = ThisWorkbook.Sheets(SH_MAIN)
-    ws.Cells(1, 1).Value = "å®Ÿè¡Œãƒ­ã‚°"
-    ws.Cells(2, 1).Value = "æ—¥æ™‚"
-    ws.Cells(2, 2).Value = "ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸"
+    ws.Cells(1, 1).Value = "ÀsƒƒO"
+    ws.Cells(2, 1).Value = "“ú"
+    ws.Cells(2, 2).Value = "ƒƒbƒZ[ƒW"
     ws.Cells(1, 1).Font.Bold = True
     With ws.Rows(2)
         .Font.Bold = True
@@ -36,7 +36,7 @@ Private Sub SetupMainSheet()
 
     ' Add command button
     Set btn = ws.Buttons.Add(10, 10, 160, 30)
-    btn.Caption = "ãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã‚€"
+    btn.Caption = "ƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚Ş"
     btn.OnAction = "modUIControl.RunAll"
 End Sub
 
@@ -44,24 +44,24 @@ Private Sub SetupConfigSheet()
     Dim ws As Worksheet
     Set ws = ThisWorkbook.Sheets(SH_CONFIG)
 
-    ' è£½å“ãƒã‚¹ã‚¿ (A1:B)
-    ws.Cells(1, 1).Value = "è£½å“ãƒã‚¹ã‚¿"
-    ws.Cells(2, 1).Value = "è£½å“ã‚³ãƒ¼ãƒ‰"
-    ws.Cells(2, 2).Value = "è£½å“å"
+    ' »•iƒ}ƒXƒ^ (A1:B)
+    ws.Cells(1, 1).Value = "»•iƒ}ƒXƒ^"
+    ws.Cells(2, 1).Value = "»•iƒR[ƒh"
+    ws.Cells(2, 2).Value = "»•i–¼"
 
-    ' å£éŠ­ãƒã‚¹ã‚¿ (D1:E)
-    ws.Cells(1, 4).Value = "å£éŠ­ãƒã‚¹ã‚¿"
-    ws.Cells(2, 4).Value = "å£²ä¸Šç¨®åˆ¥"
-    ws.Cells(2, 5).Value = "å£éŠ­æ¯”ç‡%"
+    ' Œû‘Kƒ}ƒXƒ^ (D1:E)
+    ws.Cells(1, 4).Value = "Œû‘Kƒ}ƒXƒ^"
+    ws.Cells(2, 4).Value = "”„ãí•Ê"
+    ws.Cells(2, 5).Value = "Œû‘K”ä—¦%"
 
-    ' ãƒ˜ãƒƒãƒ€ãƒ¼åå¯„ã› (G1:H)
-    ws.Cells(1, 7).Value = "ãƒ˜ãƒƒãƒ€ãƒ¼åå¯„ã›è¨­å®š"
-    ws.Cells(2, 7).Value = "æ­£è¦å"
-    ws.Cells(2, 8).Value = "å¯¾å¿œåˆ—åï¼ˆã‚«ãƒ³ãƒåŒºåˆ‡ã‚Šï¼‰"
+    ' ƒwƒbƒ_[–¼Šñ‚¹ (G1:H)
+    ws.Cells(1, 7).Value = "ƒwƒbƒ_[–¼Šñ‚¹İ’è"
+    ws.Cells(2, 7).Value = "³‹K–¼"
+    ws.Cells(2, 8).Value = "‘Î‰—ñ–¼iƒJƒ“ƒ}‹æØ‚èj"
 
-    ' éƒ¨ç½²ãƒªã‚¹ãƒˆ (J1:J)
-    ws.Cells(1, 10).Value = "é›†è¨ˆç”¨éƒ¨ç½²ãƒªã‚¹ãƒˆ"
-    ws.Cells(2, 10).Value = "å…¨éƒ¨ç½²"
+    ' •”ƒŠƒXƒg (J1:J)
+    ws.Cells(1, 10).Value = "WŒv—p•”ƒŠƒXƒg"
+    ws.Cells(2, 10).Value = "‘S•”"
 
     ' Bold section headers
     ws.Cells(1, 1).Font.Bold = True
@@ -80,31 +80,31 @@ Private Sub SetupConfigSheet()
     ws.Columns("G:H").ColumnWidth = 20
     ws.Columns("J").ColumnWidth = 16
 
-    ' SharePointé€£æº (L1:M)
-    ws.Cells(1, CFG_PA_LABEL_COL).Value = "SharePointé€£æº"
+    ' SharePoint˜AŒg (L1:M)
+    ws.Cells(1, CFG_PA_LABEL_COL).Value = "SharePoint˜AŒg"
     ws.Cells(1, CFG_PA_LABEL_COL).Font.Bold = True
     ws.Cells(2, CFG_PA_LABEL_COL).Value = "PowerAutomate URL"
     ws.Cells(2, CFG_PA_LABEL_COL).Font.Bold = True
     ws.Columns("L").ColumnWidth = 20
     ws.Columns("M").ColumnWidth = 60
 
-    ' Sample è£½å“ãƒã‚¹ã‚¿ data
-    ws.Cells(3, 1).Value = "P001": ws.Cells(3, 2).Value = "è£½å“A"
-    ws.Cells(4, 1).Value = "P002": ws.Cells(4, 2).Value = "è£½å“B"
+    ' Sample »•iƒ}ƒXƒ^ data
+    ws.Cells(3, 1).Value = "P001": ws.Cells(3, 2).Value = "»•iA"
+    ws.Cells(4, 1).Value = "P002": ws.Cells(4, 2).Value = "»•iB"
 
-    ' Sample å£éŠ­ãƒã‚¹ã‚¿ data
-    ws.Cells(3, 4).Value = "ç›´è²©":  ws.Cells(3, 5).Value = 10
-    ws.Cells(4, 4).Value = "ä»£ç†åº—": ws.Cells(4, 5).Value = 5
+    ' Sample Œû‘Kƒ}ƒXƒ^ data
+    ws.Cells(3, 4).Value = "’¼”Ì":  ws.Cells(3, 5).Value = 10
+    ws.Cells(4, 4).Value = "‘ã—“X": ws.Cells(4, 5).Value = 5
 
-    ' Sample åå¯„ã› data
-    ws.Cells(3, 7).Value = HDR_CLIENT:    ws.Cells(3, 8).Value = "å¾—æ„å…ˆå,å¾—æ„å…ˆã‚³ãƒ¼ãƒ‰,é¡§å®¢å"
-    ws.Cells(4, 7).Value = HDR_PROD_CODE: ws.Cells(4, 8).Value = "å“ç•ª,ProductCode"
-    ws.Cells(5, 7).Value = HDR_AMOUNT:    ws.Cells(5, 8).Value = "é‡‘é¡,Amount,å£²ä¸Šé«˜"
-    ws.Cells(6, 7).Value = HDR_UNIT_PRICE: ws.Cells(6, 8).Value = "å˜ä¾¡,å®šä¾¡"
-    ws.Cells(7, 7).Value = HDR_QTY:       ws.Cells(7, 8).Value = "æ•°é‡,Qty"
-    ws.Cells(8, 7).Value = HDR_DATE:      ws.Cells(8, 8).Value = "æ—¥ä»˜,å£²ä¸Šæ—¥,Date"
-    ws.Cells(9, 7).Value = HDR_SALE_TYPE: ws.Cells(9, 8).Value = "å–å¼•åŒºåˆ†,SaleType"
-    ws.Cells(10, 7).Value = HDR_DEPT:     ws.Cells(10, 8).Value = "éƒ¨é–€,Dept"
+    ' Sample –¼Šñ‚¹ data
+    ws.Cells(3, 7).Value = HDR_CLIENT:    ws.Cells(3, 8).Value = "“¾ˆÓæ–¼,“¾ˆÓæƒR[ƒh,ŒÚ‹q–¼"
+    ws.Cells(4, 7).Value = HDR_PROD_CODE: ws.Cells(4, 8).Value = "•i”Ô,ProductCode"
+    ws.Cells(5, 7).Value = HDR_AMOUNT:    ws.Cells(5, 8).Value = "‹àŠz,Amount,”„ã‚"
+    ws.Cells(6, 7).Value = HDR_UNIT_PRICE: ws.Cells(6, 8).Value = "’P‰¿,’è‰¿"
+    ws.Cells(7, 7).Value = HDR_QTY:       ws.Cells(7, 8).Value = "”—Ê,Qty"
+    ws.Cells(8, 7).Value = HDR_DATE:      ws.Cells(8, 8).Value = "“ú•t,”„ã“ú,Date"
+    ws.Cells(9, 7).Value = HDR_SALE_TYPE: ws.Cells(9, 8).Value = "æˆø‹æ•ª,SaleType"
+    ws.Cells(10, 7).Value = HDR_DEPT:     ws.Cells(10, 8).Value = "•”–å,Dept"
 End Sub
 
 Private Sub SetupAllSheet()
@@ -130,7 +130,7 @@ Private Sub SetupAllSheet()
     ' Add upload button
     Dim uploadBtn As Object
     Set uploadBtn = ws.Buttons.Add(700, 5, 180, 28)
-    uploadBtn.Caption = "SharePointã¸ã‚¢ãƒƒãƒ—ãƒ­ãƒ¼ãƒ‰"
+    uploadBtn.Caption = "SharePoint‚ÖƒAƒbƒvƒ[ƒh"
     uploadBtn.OnAction = "modSharePoint.UploadAllToSharePoint"
 End Sub
 
@@ -139,16 +139,16 @@ Private Sub SetupAggrSheet()
     Set ws = ThisWorkbook.Sheets(SH_AGGR)
 
     ' Filter labels
-    ws.Cells(1, 1).Value = "éƒ¨ç½²é¸æŠ"
-    ws.Cells(2, 1).Value = "é–‹å§‹æ—¥"
-    ws.Cells(3, 1).Value = "çµ‚äº†æ—¥"
+    ws.Cells(1, 1).Value = "•”‘I‘ğ"
+    ws.Cells(2, 1).Value = "ŠJn“ú"
+    ws.Cells(3, 1).Value = "I—¹“ú"
     ws.Range("A1:A3").Font.Bold = True
-    ws.Range(AGGR_DEPT_CELL).Value = "å…¨éƒ¨ç½²"
+    ws.Range(AGGR_DEPT_CELL).Value = "‘S•”"
 
     ' Aggregate header row
-    ws.Cells(AGGR_HDR_ROW, 2).Value = "å£²ä¸Šé‡‘é¡åˆè¨ˆ"
-    ws.Cells(AGGR_HDR_ROW, 3).Value = "å£²ä¸Šæ•°é‡åˆè¨ˆ"
-    ws.Cells(AGGR_HDR_ROW, 4).Value = "å£éŠ­ç·é¡"
+    ws.Cells(AGGR_HDR_ROW, 2).Value = "”„ã‹àŠz‡Œv"
+    ws.Cells(AGGR_HDR_ROW, 3).Value = "”„ã”—Ê‡Œv"
+    ws.Cells(AGGR_HDR_ROW, 4).Value = "Œû‘K‘Šz"
     With ws.Rows(AGGR_HDR_ROW)
         .Font.Bold = True
         .Interior.Color = RGB(200, 220, 240)
@@ -160,13 +160,13 @@ Private Sub SetupAggrSheet()
     ' Add chart button
     Dim chartBtn As Object
     Set chartBtn = ws.Buttons.Add(330, 5, 150, 28)
-    chartBtn.Caption = "ã‚°ãƒ©ãƒ•ä½œæˆ"
+    chartBtn.Caption = "ƒOƒ‰ƒtì¬"
     chartBtn.OnAction = "modChart.DrawAggrChart"
 
     ' Add upload button
     Dim uploadBtn As Object
     Set uploadBtn = ws.Buttons.Add(490, 5, 180, 28)
-    uploadBtn.Caption = "SharePointã¸ã‚¢ãƒƒãƒ—ãƒ­ãƒ¼ãƒ‰"
+    uploadBtn.Caption = "SharePoint‚ÖƒAƒbƒvƒ[ƒh"
     uploadBtn.OnAction = "modSharePoint.UploadToSharePoint"
 End Sub
 

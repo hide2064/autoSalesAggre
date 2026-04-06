@@ -97,18 +97,18 @@ Private Function ProcessSourceSheet(wsSrc As Worksheet, wsAll As Worksheet, _
             End If
         Next allCol
 
-        ' Calculate è£½å“å (col 9)
+        ' Calculate »•i–¼ (col 9)
         prodCode = Trim(CStr(outArr(r, ALL_COL_PROD_CODE)))
         If dictProduct.Exists(prodCode) Then
             outArr(r, ALL_COL_PROD_NAME) = dictProduct(prodCode)
         Else
-            outArr(r, ALL_COL_PROD_NAME) = "[æœªç™»éŒ²]"
+            outArr(r, ALL_COL_PROD_NAME) = "[–¢“o˜^]"
             If prodCode <> "" Then
-                LogMessage "è­¦å‘Š: è£½å“ã‚³ãƒ¼ãƒ‰æœªç™»éŒ² [" & prodCode & "] (" & wsSrc.Name & ")"
+                LogMessage "Œx: »•iƒR[ƒh–¢“o˜^ [" & prodCode & "] (" & wsSrc.Name & ")"
             End If
         End If
 
-        ' Calculate éƒ¨ç½²å–ã‚Šåˆ† (col 10)
+        ' Calculate •”æ‚è•ª (col 10)
         saleType = Trim(CStr(outArr(r, ALL_COL_SALE_TYPE)))
         amount = 0
         If IsNumeric(outArr(r, ALL_COL_AMOUNT)) Then amount = CDbl(outArr(r, ALL_COL_AMOUNT))
@@ -117,7 +117,7 @@ Private Function ProcessSourceSheet(wsSrc As Worksheet, wsAll As Worksheet, _
         Else
             outArr(r, ALL_COL_MARGIN) = 0
             If saleType <> "" Then
-                LogMessage "è­¦å‘Š: å£²ä¸Šç¨®åˆ¥æœªç™»éŒ² [" & saleType & "] (" & wsSrc.Name & ")"
+                LogMessage "Œx: ”„ãí•Ê–¢“o˜^ [" & saleType & "] (" & wsSrc.Name & ")"
             End If
         End If
 

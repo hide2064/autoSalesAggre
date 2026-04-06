@@ -19,6 +19,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Delete `autoSalesAggre.xlsm`, then re-run `cscript setup\create_workbook.vbs`.
 
+## Encoding rule for src/*.bas files
+
+All `.bas` files must be saved in **Shift-JIS (CP932)**. After editing any `.bas` file, convert it with:
+
+```python
+python3 -c "
+import os
+src_dir = 'src'
+for fname in os.listdir(src_dir):
+    if fname.endswith('.bas'):
+        fpath = os.path.join(src_dir, fname)
+        with open(fpath, 'r', encoding='utf-8') as f:
+            text = f.read()
+        with open(fpath, 'w', encoding='cp932') as f:
+            f.write(text)
+"
+```
+
 ## Module responsibilities
 
 | Module | Responsibility |
@@ -38,6 +56,11 @@ Delete `autoSalesAggre.xlsm`, then re-run `cscript setup\create_workbook.vbs`.
 | D–E | 口銭マスタ: 売上種別 → 口銭比率% (from row 3) |
 | G–H | ヘッダー名寄せ: 正規名 → カンマ区切りエイリアス (from row 3) |
 | J | 集計用部署リスト: J2="全部署" (fixed), J3+ auto-updated after each RunAll |
+
+## LogMessage rules
+
+- Do **not** start log strings with `=` or `-` — Excel interprets them as formulas and throws an error
+- Use `【】` brackets for section markers (e.g. `"【処理開始】"`)
 
 ## Key design decisions
 
