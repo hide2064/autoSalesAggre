@@ -24,6 +24,14 @@ Public Sub Rebuild()
     Dim qty As Double
     Dim margin As Double
     Dim existing As Variant
+    Dim totalCols As Integer
+    Dim colDept     As Integer
+    Dim colDate     As Integer
+    Dim colClient   As Integer
+    Dim colAmount   As Integer
+    Dim colQty      As Integer
+    Dim colProdName As Integer
+    Dim colMargin   As Integer
 
     Set wsAggr = ThisWorkbook.Sheets(SH_AGGR)
 
@@ -54,7 +62,22 @@ Public Sub Rebuild()
     If lastRow < 2 Then Exit Sub
     ClearAggrTable wsAggr
 
-    allData = wsAll.Range(wsAll.Cells(2, 1), wsAll.Cells(lastRow, ALL_TOTAL_COLS)).Value
+    ' 列インデックスを動的解決
+    colDept     = GetAllColIndex(wsAll, HDR_DEPT)
+    colDate     = GetAllColIndex(wsAll, HDR_DATE)
+    colClient   = GetAllColIndex(wsAll, HDR_CLIENT)
+    colAmount   = GetAllColIndex(wsAll, HDR_AMOUNT)
+    colQty      = GetAllColIndex(wsAll, HDR_QTY)
+    colProdName = GetAllColIndex(wsAll, HDR_PROD_NAME)
+    colMargin   = GetAllColIndex(wsAll, HDR_MARGIN)
+
+    If colProdName = 0 Or colClient = 0 Then
+        LogMessage "[エラー] 集計に必要な列（製品名・客先名）がallシートに見つかりません"
+        Exit Sub
+    End If
+
+    totalCols = wsAll.Cells(1, wsAll.Columns.Count).End(xlToLeft).Column
+    allData = wsAll.Range(wsAll.Cells(2, 1), wsAll.Cells(lastRow, totalCols)).Value
 
     ' Aggregate into dictSummary
     ' Key:   製品名 & "||" & 客先名
@@ -64,12 +87,15 @@ Public Sub Rebuild()
     For r = 1 To UBound(allData, 1)
         ' Dept filter
         If selectedDept <> "全部署" And selectedDept <> "" Then
-            If Trim(CStr(allData(r, ALL_COL_DEPT))) <> selectedDept Then GoTo NextRow
+            If colDept > 0 Then
+                If Trim(CStr(allData(r, colDept))) <> selectedDept Then GoTo NextRow
+            End If
         End If
 
         ' Date filter
         If useFrom Or useTo Then
-            saleDateRaw = allData(r, ALL_COL_DATE)
+            If colDate = 0 Then GoTo NextRow
+            saleDateRaw = allData(r, colDate)
             If Not IsDate(saleDateRaw) Then GoTo NextRow
             saleDate = CDate(saleDateRaw)
             If useFrom And saleDate < fromDate Then GoTo NextRow
@@ -77,14 +103,21 @@ Public Sub Rebuild()
         End If
 
         ' Accumulate totals
-        pName = Trim(CStr(allData(r, ALL_COL_PROD_NAME)))
-        cName = Trim(CStr(allData(r, ALL_COL_CLIENT)))
+        pName = Trim(CStr(allData(r, colProdName)))
+        cName = ""
+        If colClient > 0 Then cName = Trim(CStr(allData(r, colClient)))
         key = pName & "||" & cName
 
         amt = 0: qty = 0: margin = 0
-        If IsNumeric(allData(r, ALL_COL_AMOUNT)) Then amt = CDbl(allData(r, ALL_COL_AMOUNT))
-        If IsNumeric(allData(r, ALL_COL_QTY)) Then qty = CDbl(allData(r, ALL_COL_QTY))
-        If IsNumeric(allData(r, ALL_COL_MARGIN)) Then margin = CDbl(allData(r, ALL_COL_MARGIN))
+        If colAmount > 0 Then
+            If IsNumeric(allData(r, colAmount)) Then amt = CDbl(allData(r, colAmount))
+        End If
+        If colQty > 0 Then
+            If IsNumeric(allData(r, colQty)) Then qty = CDbl(allData(r, colQty))
+        End If
+        If colMargin > 0 Then
+            If IsNumeric(allData(r, colMargin)) Then margin = CDbl(allData(r, colMargin))
+        End If
 
         If dictSummary.Exists(key) Then
             existing = dictSummary(key)

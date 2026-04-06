@@ -6,25 +6,26 @@ Public Sub BuildAllSheet(dictProduct As Object, dictCommission As Object, dictHe
     Dim lastRow As Long
     Dim ws As Worksheet
     Dim allRowNum As Long
+    Dim dictAllColDef As Object
+    Dim i As Integer
+    Dim k As Variant
 
     Set wsAll = ThisWorkbook.Sheets(SH_ALL)
+    Set dictAllColDef = LoadAllColDef()
 
     ' Clear data rows, keep header
     lastRow = wsAll.Cells(wsAll.Rows.Count, 1).End(xlUp).Row
     If lastRow >= 2 Then wsAll.Rows("2:" & lastRow).ClearContents
 
-    ' Write header row
-    wsAll.Cells(1, ALL_COL_CLIENT).Value = HDR_CLIENT
-    wsAll.Cells(1, ALL_COL_PROD_CODE).Value = HDR_PROD_CODE
-    wsAll.Cells(1, ALL_COL_AMOUNT).Value = HDR_AMOUNT
-    wsAll.Cells(1, ALL_COL_UNIT_PRICE).Value = HDR_UNIT_PRICE
-    wsAll.Cells(1, ALL_COL_QTY).Value = HDR_QTY
-    wsAll.Cells(1, ALL_COL_DATE).Value = HDR_DATE
-    wsAll.Cells(1, ALL_COL_SALE_TYPE).Value = HDR_SALE_TYPE
-    wsAll.Cells(1, ALL_COL_DEPT).Value = HDR_DEPT
-    wsAll.Cells(1, ALL_COL_PROD_NAME).Value = HDR_PROD_NAME
-    wsAll.Cells(1, ALL_COL_MARGIN).Value = HDR_MARGIN
-    wsAll.Cells(1, ALL_COL_SOURCE).Value = HDR_SOURCE
+    ' Write header row dynamically
+    i = 1
+    For Each k In dictAllColDef.Keys
+        wsAll.Cells(1, i).Value = dictAllColDef(k)
+        i = i + 1
+    Next k
+    wsAll.Cells(1, i).Value = HDR_PROD_NAME
+    wsAll.Cells(1, i + 1).Value = HDR_MARGIN
+    wsAll.Cells(1, i + 2).Value = HDR_SOURCE
 
     allRowNum = 2
 
@@ -33,28 +34,40 @@ Public Sub BuildAllSheet(dictProduct As Object, dictCommission As Object, dictHe
             Case SH_MAIN, SH_CONFIG, SH_ALL, SH_AGGR
                 ' skip fixed sheets
             Case Else
-                allRowNum = ProcessSourceSheet(ws, wsAll, allRowNum, dictProduct, dictCommission, dictHeaderMap)
+                allRowNum = ProcessSourceSheet(ws, wsAll, allRowNum, dictProduct, dictCommission, dictHeaderMap, dictAllColDef)
         End Select
     Next ws
 End Sub
 
 Private Function ProcessSourceSheet(wsSrc As Worksheet, wsAll As Worksheet, _
     startRow As Long, dictProduct As Object, dictCommission As Object, _
-    dictHeaderMap As Object) As Long
+    dictHeaderMap As Object, dictAllColDef As Object) As Long
 
     Dim lastSrcRow As Long
     Dim lastSrcCol As Integer
-    Dim colMap(7) As Integer
     Dim c As Integer
+    Dim i As Integer
     Dim srcHeader As String
+    Dim canonical As String
     Dim srcData As Variant
     Dim numRows As Long
     Dim outArr() As Variant
     Dim r As Long
-    Dim allCol As Integer
     Dim prodCode As String
     Dim saleType As String
     Dim amount As Double
+    Dim N As Integer
+    Dim totalCols As Integer
+    Dim colMap() As Integer
+    Dim canonicalKeys() As String
+    Dim dictCanonToIdx As Object
+    Dim k As Variant
+    Dim idxProdCode As Integer
+    Dim idxSaleType As Integer
+    Dim idxAmount As Integer
+
+    N = dictAllColDef.Count
+    totalCols = N + 3
 
     lastSrcRow = wsSrc.Cells(wsSrc.Rows.Count, 1).End(xlUp).Row
     If lastSrcRow < 2 Then
@@ -64,69 +77,92 @@ Private Function ProcessSourceSheet(wsSrc As Worksheet, wsAll As Worksheet, _
 
     lastSrcCol = wsSrc.Cells(1, wsSrc.Columns.Count).End(xlToLeft).Column
 
-    ' colMap(allColIndex - 1) = source column number (0 = unmapped)
+    ' canonicalKeys(1..N): dictAllColDef の挿入順キー配列
+    ReDim canonicalKeys(1 To N)
+    i = 1
+    For Each k In dictAllColDef.Keys
+        canonicalKeys(i) = CStr(k)
+        i = i + 1
+    Next k
+
+    ' 逆引きDict: 正規名 -> Allシート列インデックス(1-based)
+    Set dictCanonToIdx = NewDict()
+    For i = 1 To N
+        dictCanonToIdx(canonicalKeys(i)) = i
+    Next i
+
+    ' colMap(i) = TSV列番号 (0=未マップ)
+    ReDim colMap(1 To N)
+
     For c = 1 To lastSrcCol
         srcHeader = LCase(Trim(CStr(wsSrc.Cells(1, c).Value)))
         If dictHeaderMap.Exists(srcHeader) Then
-            Select Case dictHeaderMap(srcHeader)
-                Case HDR_CLIENT:      colMap(ALL_COL_CLIENT - 1) = c
-                Case HDR_PROD_CODE:   colMap(ALL_COL_PROD_CODE - 1) = c
-                Case HDR_AMOUNT:      colMap(ALL_COL_AMOUNT - 1) = c
-                Case HDR_UNIT_PRICE:  colMap(ALL_COL_UNIT_PRICE - 1) = c
-                Case HDR_QTY:         colMap(ALL_COL_QTY - 1) = c
-                Case HDR_DATE:        colMap(ALL_COL_DATE - 1) = c
-                Case HDR_SALE_TYPE:   colMap(ALL_COL_SALE_TYPE - 1) = c
-                Case HDR_DEPT:        colMap(ALL_COL_DEPT - 1) = c
-            End Select
+            canonical = dictHeaderMap(srcHeader)
+            If dictCanonToIdx.Exists(canonical) Then
+                colMap(dictCanonToIdx(canonical)) = c
+            End If
         End If
     Next c
 
-    ' Bulk read source data into Variant array
-    srcData = wsSrc.Range(wsSrc.Cells(2, 1), wsSrc.Cells(lastSrcRow, lastSrcCol)).Value
+    ' 計算に使う列インデックスを事前確定
+    idxProdCode = 0: idxSaleType = 0: idxAmount = 0
+    For i = 1 To N
+        Select Case canonicalKeys(i)
+            Case HDR_PROD_CODE:  idxProdCode = i
+            Case HDR_SALE_TYPE:  idxSaleType = i
+            Case HDR_AMOUNT:     idxAmount   = i
+        End Select
+    Next i
 
+    ' Bulk read source data
+    srcData = wsSrc.Range(wsSrc.Cells(2, 1), wsSrc.Cells(lastSrcRow, lastSrcCol)).Value
     numRows = lastSrcRow - 1
-    ReDim outArr(1 To numRows, 1 To ALL_TOTAL_COLS)
+    ReDim outArr(1 To numRows, 1 To totalCols)
 
     For r = 1 To numRows
-        ' Copy source columns ALL_COL_CLIENT to ALL_COL_DEPT (cols 1-8)
-        For allCol = ALL_COL_CLIENT To ALL_COL_DEPT
-            If colMap(allCol - 1) > 0 Then
-                outArr(r, allCol) = srcData(r, colMap(allCol - 1))
+        ' 列1..N: TSVデータをコピー
+        For i = 1 To N
+            If colMap(i) > 0 Then
+                outArr(r, i) = srcData(r, colMap(i))
             Else
-                outArr(r, allCol) = ""
+                outArr(r, i) = ""
             End If
-        Next allCol
+        Next i
 
-        ' Calculate 製品名 (col 9)
-        prodCode = Trim(CStr(outArr(r, ALL_COL_PROD_CODE)))
+        ' 列N+1: 製品名
+        prodCode = ""
+        If idxProdCode > 0 Then prodCode = Trim(CStr(outArr(r, idxProdCode)))
         If dictProduct.Exists(prodCode) Then
-            outArr(r, ALL_COL_PROD_NAME) = dictProduct(prodCode)
+            outArr(r, N + 1) = dictProduct(prodCode)
         Else
-            outArr(r, ALL_COL_PROD_NAME) = "[未登録]"
+            outArr(r, N + 1) = "[未登録]"
             If prodCode <> "" Then
                 LogMessage "警告: 製品コード未登録 [" & prodCode & "] (" & wsSrc.Name & ")"
             End If
         End If
 
-        ' Calculate 部署取り分 (col 10)
-        saleType = Trim(CStr(outArr(r, ALL_COL_SALE_TYPE)))
+        ' 列N+2: 口銭按分
+        saleType = ""
+        If idxSaleType > 0 Then saleType = Trim(CStr(outArr(r, idxSaleType)))
         amount = 0
-        If IsNumeric(outArr(r, ALL_COL_AMOUNT)) Then amount = CDbl(outArr(r, ALL_COL_AMOUNT))
+        If idxAmount > 0 Then
+            If IsNumeric(outArr(r, idxAmount)) Then amount = CDbl(outArr(r, idxAmount))
+        End If
         If dictCommission.Exists(saleType) Then
-            outArr(r, ALL_COL_MARGIN) = amount * dictCommission(saleType) / 100
+            outArr(r, N + 2) = amount * dictCommission(saleType) / 100
         Else
-            outArr(r, ALL_COL_MARGIN) = 0
+            outArr(r, N + 2) = 0
             If saleType <> "" Then
                 LogMessage "警告: 売上種別未登録 [" & saleType & "] (" & wsSrc.Name & ")"
             End If
         End If
 
-        ' Source file name (col 11)
-        outArr(r, ALL_COL_SOURCE) = wsSrc.Name
+        ' 列N+3: ソースファイル名
+        outArr(r, N + 3) = wsSrc.Name
     Next r
 
-    ' Bulk write to all sheet
-    wsAll.Range(wsAll.Cells(startRow, 1), wsAll.Cells(startRow + numRows - 1, ALL_TOTAL_COLS)).Value = outArr
+    ' Bulk write
+    wsAll.Range(wsAll.Cells(startRow, 1), wsAll.Cells(startRow + numRows - 1, totalCols)).Value = outArr
 
     ProcessSourceSheet = startRow + numRows
 End Function
@@ -138,18 +174,24 @@ Public Function CollectUniqueDepts() As Object
     Dim deptArr As Variant
     Dim r As Long
     Dim dept As String
+    Dim colDept As Integer
 
     Set dict = NewDict()
-
     Set wsAll = ThisWorkbook.Sheets(SH_ALL)
 
-    lastRow = wsAll.Cells(wsAll.Rows.Count, ALL_COL_DEPT).End(xlUp).Row
+    colDept = GetAllColIndex(wsAll, HDR_DEPT)
+    If colDept = 0 Then
+        Set CollectUniqueDepts = dict
+        Exit Function
+    End If
+
+    lastRow = wsAll.Cells(wsAll.Rows.Count, colDept).End(xlUp).Row
     If lastRow < 2 Then
         Set CollectUniqueDepts = dict
         Exit Function
     End If
 
-    deptArr = wsAll.Range(wsAll.Cells(2, ALL_COL_DEPT), wsAll.Cells(lastRow, ALL_COL_DEPT)).Value
+    deptArr = wsAll.Range(wsAll.Cells(2, colDept), wsAll.Cells(lastRow, colDept)).Value
 
     For r = 1 To UBound(deptArr, 1)
         dept = Trim(CStr(deptArr(r, 1)))
