@@ -1,199 +1,201 @@
-Attribute VB_Name = "modSetup"
-Option Explicit
-
-Public Sub InitWorkbook()
-    ' Step 1: Rename placeholder sheet to é›†è¨ˆ
-    Dim ws As Worksheet
-    For Each ws In ThisWorkbook.Sheets
-        If ws.Name = "Shuukei" Or ws.Name = "Sheet4" Or ws.Name = "Sheet3" Then
-            ws.Name = SH_AGGR
-            Exit For
-        End If
-    Next ws
-
-    SetupMainSheet
-    SetupConfigSheet
-    SetupAllSheet
-    SetupAggrSheet
-    InjectAggrEvent
-End Sub
-
-Private Sub SetupMainSheet()
-    Dim ws As Worksheet
-    Dim btn As Object
-
-    Set ws = ThisWorkbook.Sheets(SH_MAIN)
-    ws.Cells(1, 1).Value = "å®Ÿè¡Œãƒ­ã‚°"
-    ws.Cells(2, 1).Value = "æ—¥æ™‚"
-    ws.Cells(2, 2).Value = "ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸"
-    ws.Cells(1, 1).Font.Bold = True
-    With ws.Rows(2)
-        .Font.Bold = True
-        .Interior.Color = RGB(200, 220, 240)
-    End With
-    ws.Columns(1).ColumnWidth = 22
-    ws.Columns(2).ColumnWidth = 80
-
-    ' Add command button
-    Set btn = ws.Buttons.Add(10, 10, 160, 30)
-    btn.Caption = "ãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã‚€"
-    btn.OnAction = "modUIControl.RunAll"
-End Sub
-
-Private Sub SetupConfigSheet()
-    Dim ws As Worksheet
-    Set ws = ThisWorkbook.Sheets(SH_CONFIG)
-
-    ' è£½å“ãƒã‚¹ã‚¿ (A1:B)
-    ws.Cells(1, 1).Value = "è£½å“ãƒã‚¹ã‚¿"
-    ws.Cells(2, 1).Value = "è£½å“ã‚³ãƒ¼ãƒ‰"
-    ws.Cells(2, 2).Value = "è£½å“å"
-
-    ' å£éŠ­ãƒã‚¹ã‚¿ (D1:E)
-    ws.Cells(1, 4).Value = "å£éŠ­ãƒã‚¹ã‚¿"
-    ws.Cells(2, 4).Value = "å£²ä¸Šç¨®åˆ¥"
-    ws.Cells(2, 5).Value = "å£éŠ­æ¯”ç‡%"
-
-    ' ãƒ˜ãƒƒãƒ€ãƒ¼åå¯„ã› (G1:H)
-    ws.Cells(1, 7).Value = "ãƒ˜ãƒƒãƒ€ãƒ¼åå¯„ã›è¨­å®š"
-    ws.Cells(2, 7).Value = "æ­£è¦å"
-    ws.Cells(2, 8).Value = "å¯¾å¿œåˆ—åï¼ˆã‚«ãƒ³ãƒåŒºåˆ‡ã‚Šï¼‰"
-
-    ' éƒ¨ç½²ãƒªã‚¹ãƒˆ (J1:J)
-    ws.Cells(1, 10).Value = "é›†è¨ˆç”¨éƒ¨ç½²ãƒªã‚¹ãƒˆ"
-    ws.Cells(2, 10).Value = "å…¨éƒ¨ç½²"
-
-    ' Bold section headers
-    ws.Cells(1, 1).Font.Bold = True
-    ws.Cells(1, 4).Font.Bold = True
-    ws.Cells(1, 7).Font.Bold = True
-    ws.Cells(1, 10).Font.Bold = True
-
-    ' Bold column headers
-    ws.Range("A2:B2").Font.Bold = True
-    ws.Range("D2:E2").Font.Bold = True
-    ws.Range("G2:H2").Font.Bold = True
-    ws.Range("J2").Font.Bold = True
-
-    ws.Columns("A:B").ColumnWidth = 16
-    ws.Columns("D:E").ColumnWidth = 14
-    ws.Columns("G:H").ColumnWidth = 20
-    ws.Columns("J").ColumnWidth = 16
-
-    ' SharePointé€£æº (L1:M)
-    ws.Cells(1, CFG_PA_LABEL_COL).Value = "SharePointé€£æº"
-    ws.Cells(1, CFG_PA_LABEL_COL).Font.Bold = True
-    ws.Cells(2, CFG_PA_LABEL_COL).Value = "PowerAutomate URL"
-    ws.Cells(2, CFG_PA_LABEL_COL).Font.Bold = True
-    ws.Columns("L").ColumnWidth = 20
-    ws.Columns("M").ColumnWidth = 60
-
-    ' Sample è£½å“ãƒã‚¹ã‚¿ data
-    ws.Cells(3, 1).Value = "P001": ws.Cells(3, 2).Value = "è£½å“A"
-    ws.Cells(4, 1).Value = "P002": ws.Cells(4, 2).Value = "è£½å“B"
-
-    ' Sample å£éŠ­ãƒã‚¹ã‚¿ data
-    ws.Cells(3, 4).Value = "ç›´è²©":  ws.Cells(3, 5).Value = 10
-    ws.Cells(4, 4).Value = "ä»£ç†åº—": ws.Cells(4, 5).Value = 5
-
-    ' Sample åå¯„ã› data
-    ws.Cells(3, 7).Value = HDR_CLIENT:    ws.Cells(3, 8).Value = "å¾—æ„å…ˆå,å¾—æ„å…ˆã‚³ãƒ¼ãƒ‰,é¡§å®¢å"
-    ws.Cells(4, 7).Value = HDR_PROD_CODE: ws.Cells(4, 8).Value = "å“ç•ª,ProductCode"
-    ws.Cells(5, 7).Value = HDR_AMOUNT:    ws.Cells(5, 8).Value = "é‡‘é¡,Amount,å£²ä¸Šé«˜"
-    ws.Cells(6, 7).Value = HDR_UNIT_PRICE: ws.Cells(6, 8).Value = "å˜ä¾¡,å®šä¾¡"
-    ws.Cells(7, 7).Value = HDR_QTY:       ws.Cells(7, 8).Value = "æ•°é‡,Qty"
-    ws.Cells(8, 7).Value = HDR_DATE:      ws.Cells(8, 8).Value = "æ—¥ä»˜,å£²ä¸Šæ—¥,Date"
-    ws.Cells(9, 7).Value = HDR_SALE_TYPE: ws.Cells(9, 8).Value = "å–å¼•åŒºåˆ†,SaleType"
-    ws.Cells(10, 7).Value = HDR_DEPT:     ws.Cells(10, 8).Value = "éƒ¨é–€,Dept"
-End Sub
-
-Private Sub SetupAllSheet()
-    Dim ws As Worksheet
-    Set ws = ThisWorkbook.Sheets(SH_ALL)
-    ws.Cells(1, ALL_COL_CLIENT).Value = HDR_CLIENT
-    ws.Cells(1, ALL_COL_PROD_CODE).Value = HDR_PROD_CODE
-    ws.Cells(1, ALL_COL_AMOUNT).Value = HDR_AMOUNT
-    ws.Cells(1, ALL_COL_UNIT_PRICE).Value = HDR_UNIT_PRICE
-    ws.Cells(1, ALL_COL_QTY).Value = HDR_QTY
-    ws.Cells(1, ALL_COL_DATE).Value = HDR_DATE
-    ws.Cells(1, ALL_COL_SALE_TYPE).Value = HDR_SALE_TYPE
-    ws.Cells(1, ALL_COL_DEPT).Value = HDR_DEPT
-    ws.Cells(1, ALL_COL_PROD_NAME).Value = HDR_PROD_NAME
-    ws.Cells(1, ALL_COL_MARGIN).Value = HDR_MARGIN
-    ws.Cells(1, ALL_COL_SOURCE).Value = HDR_SOURCE
-    With ws.Rows(1)
-        .Font.Bold = True
-        .Interior.Color = RGB(200, 220, 240)
-    End With
-    ws.Columns("A:K").AutoFit
-
-    ' Add upload button
-    Dim uploadBtn As Object
-    Set uploadBtn = ws.Buttons.Add(700, 5, 180, 28)
-    uploadBtn.Caption = "SharePointã¸ã‚¢ãƒƒãƒ—ãƒ­ãƒ¼ãƒ‰"
-    uploadBtn.OnAction = "modSharePoint.UploadAllToSharePoint"
-End Sub
-
-Private Sub SetupAggrSheet()
-    Dim ws As Worksheet
-    Set ws = ThisWorkbook.Sheets(SH_AGGR)
-
-    ' Filter labels
-    ws.Cells(1, 1).Value = "éƒ¨ç½²é¸æŠ"
-    ws.Cells(2, 1).Value = "é–‹å§‹æ—¥"
-    ws.Cells(3, 1).Value = "çµ‚äº†æ—¥"
-    ws.Range("A1:A3").Font.Bold = True
-    ws.Range(AGGR_DEPT_CELL).Value = "å…¨éƒ¨ç½²"
-
-    ' Aggregate header row
-    ws.Cells(AGGR_HDR_ROW, 2).Value = "å£²ä¸Šé‡‘é¡åˆè¨ˆ"
-    ws.Cells(AGGR_HDR_ROW, 3).Value = "å£²ä¸Šæ•°é‡åˆè¨ˆ"
-    ws.Cells(AGGR_HDR_ROW, 4).Value = "å£éŠ­ç·é¡"
-    With ws.Rows(AGGR_HDR_ROW)
-        .Font.Bold = True
-        .Interior.Color = RGB(200, 220, 240)
-    End With
-
-    ws.Columns("A").ColumnWidth = 30
-    ws.Columns("B:D").ColumnWidth = 15
-
-    ' Add chart button
-    Dim chartBtn As Object
-    Set chartBtn = ws.Buttons.Add(330, 5, 150, 28)
-    chartBtn.Caption = "ã‚°ãƒ©ãƒ•ä½œæˆ"
-    chartBtn.OnAction = "modChart.DrawAggrChart"
-
-    ' Add upload button
-    Dim uploadBtn As Object
-    Set uploadBtn = ws.Buttons.Add(490, 5, 180, 28)
-    uploadBtn.Caption = "SharePointã¸ã‚¢ãƒƒãƒ—ãƒ­ãƒ¼ãƒ‰"
-    uploadBtn.OnAction = "modSharePoint.UploadToSharePoint"
-End Sub
-
-Private Sub InjectAggrEvent()
-    ' Requires "Trust access to the VBA project object model" to be enabled in Excel Trust Center
-    Dim ws As Worksheet
-    Dim codeModule As Object
-    Dim code As String
-
-    Set ws = ThisWorkbook.Sheets(SH_AGGR)
-    Set codeModule = ThisWorkbook.VBProject.VBComponents(ws.CodeName).CodeModule
-
-    code = "Option Explicit" & vbNewLine & vbNewLine & _
-           "Private Sub Worksheet_Change(ByVal Target As Range)" & vbNewLine & _
-           "    Dim triggerRange As Range" & vbNewLine & _
-           "    Set triggerRange = Me.Range(AGGR_DEPT_CELL & "","" & AGGR_FROM_CELL & "","" & AGGR_TO_CELL)" & vbNewLine & _
-           "    If Intersect(Target, triggerRange) Is Nothing Then Exit Sub" & vbNewLine & _
-           "    Application.ScreenUpdating = False" & vbNewLine & _
-           "    Application.Calculation = xlCalculationManual" & vbNewLine & _
-           "    Application.EnableEvents = False" & vbNewLine & _
-           "    On Error GoTo ErrHandler" & vbNewLine & _
-           "    modAggregation.Rebuild" & vbNewLine & _
-           "ErrHandler:" & vbNewLine & _
-           "    Application.ScreenUpdating = True" & vbNewLine & _
-           "    Application.Calculation = xlCalculationAutomatic" & vbNewLine & _
-           "    Application.EnableEvents = True" & vbNewLine & _
-           "End Sub"
-
-    codeModule.AddFromString code
-End Sub
+Attribute VB_Name = "modSetup"
+Option Explicit
+
+Public Sub InitWorkbook()
+    ' Step 1: Rename placeholder sheet to WŒv
+    Dim ws As Worksheet
+    For Each ws In ThisWorkbook.Sheets
+        If ws.Name = "Shuukei" Or ws.Name = "Sheet4" Or ws.Name = "Sheet3" Then
+            ws.Name = SH_AGGR
+            Exit For
+        End If
+    Next ws
+
+    SetupMainSheet
+    SetupConfigSheet
+    SetupAllSheet
+    SetupAggrSheet
+    InjectAggrEvent
+End Sub
+
+Private Sub SetupMainSheet()
+    Dim ws As Worksheet
+    Dim btn As Object
+
+    Set ws = ThisWorkbook.Sheets(SH_MAIN)
+    ws.Cells(1, 1).Value = "ÀsƒƒO"
+    ws.Cells(2, 1).Value = "“ú"
+    ws.Cells(2, 2).Value = "ƒƒbƒZ[ƒW"
+    ws.Cells(1, 1).Font.Bold = True
+    With ws.Rows(2)
+        .Font.Bold = True
+        .Interior.Color = RGB(200, 220, 240)
+    End With
+    ws.Columns(1).ColumnWidth = 22
+    ws.Columns(2).ColumnWidth = 80
+
+    ' Add command button
+    Set btn = ws.Buttons.Add(10, 10, 160, 30)
+    btn.Caption = "ƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚Ş"
+    btn.OnAction = "modUIControl.RunAll"
+End Sub
+
+Private Sub SetupConfigSheet()
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(SH_CONFIG)
+
+    ' »•iƒ}ƒXƒ^ (A1:B)
+    ws.Cells(1, 1).Value = "»•iƒ}ƒXƒ^"
+    ws.Cells(2, 1).Value = "»•iƒR[ƒh"
+    ws.Cells(2, 2).Value = "»•i–¼"
+
+    ' Œû‘Kƒ}ƒXƒ^ (D1:E)
+    ws.Cells(1, 4).Value = "Œû‘Kƒ}ƒXƒ^"
+    ws.Cells(2, 4).Value = "”„ãí•Ê"
+    ws.Cells(2, 5).Value = "Œû‘K”ä—¦%"
+
+    ' ƒwƒbƒ_[–¼Šñ‚¹ (G1:H)
+    ws.Cells(1, 7).Value = "ƒwƒbƒ_[–¼Šñ‚¹İ’è"
+    ws.Cells(2, 7).Value = "³‹K–¼"
+    ws.Cells(2, 8).Value = "‘Î‰—ñ–¼iƒJƒ“ƒ}‹æØ‚èj"
+    ws.Cells(2, 9).Value = "AllƒV[ƒg—ñ–¼"
+
+    ' •”ƒŠƒXƒg (J1:J)
+    ws.Cells(1, 10).Value = "WŒv—p•”ƒŠƒXƒg"
+    ws.Cells(2, 10).Value = "‘S•”"
+
+    ' Bold section headers
+    ws.Cells(1, 1).Font.Bold = True
+    ws.Cells(1, 4).Font.Bold = True
+    ws.Cells(1, 7).Font.Bold = True
+    ws.Cells(1, 10).Font.Bold = True
+
+    ' Bold column headers
+    ws.Range("A2:B2").Font.Bold = True
+    ws.Range("D2:E2").Font.Bold = True
+    ws.Range("G2:I2").Font.Bold = True
+    ws.Range("J2").Font.Bold = True
+
+    ws.Columns("A:B").ColumnWidth = 16
+    ws.Columns("D:E").ColumnWidth = 14
+    ws.Columns("G:H").ColumnWidth = 20
+    ws.Columns("I").ColumnWidth = 16
+    ws.Columns("J").ColumnWidth = 16
+
+    ' SharePoint˜AŒg (L1:M)
+    ws.Cells(1, CFG_PA_LABEL_COL).Value = "SharePoint˜AŒg"
+    ws.Cells(1, CFG_PA_LABEL_COL).Font.Bold = True
+    ws.Cells(2, CFG_PA_LABEL_COL).Value = "PowerAutomate URL"
+    ws.Cells(2, CFG_PA_LABEL_COL).Font.Bold = True
+    ws.Columns("L").ColumnWidth = 20
+    ws.Columns("M").ColumnWidth = 60
+
+    ' Sample »•iƒ}ƒXƒ^ data
+    ws.Cells(3, 1).Value = "P001": ws.Cells(3, 2).Value = "»•iA"
+    ws.Cells(4, 1).Value = "P002": ws.Cells(4, 2).Value = "»•iB"
+
+    ' Sample Œû‘Kƒ}ƒXƒ^ data
+    ws.Cells(3, 4).Value = "’¼”Ì":  ws.Cells(3, 5).Value = 10
+    ws.Cells(4, 4).Value = "‘ã—“X": ws.Cells(4, 5).Value = 5
+
+    ' Sample –¼Šñ‚¹ data
+    ws.Cells(3, 7).Value = HDR_CLIENT:    ws.Cells(3, 8).Value = "“¾ˆÓæ–¼,“¾ˆÓæƒR[ƒh,ŒÚ‹q–¼": ws.Cells(3, 9).Value = HDR_CLIENT
+    ws.Cells(4, 7).Value = HDR_PROD_CODE: ws.Cells(4, 8).Value = "•i”Ô,ProductCode": ws.Cells(4, 9).Value = HDR_PROD_CODE
+    ws.Cells(5, 7).Value = HDR_AMOUNT:    ws.Cells(5, 8).Value = "‹àŠz,Amount,”„ã‚": ws.Cells(5, 9).Value = HDR_AMOUNT
+    ws.Cells(6, 7).Value = HDR_UNIT_PRICE: ws.Cells(6, 8).Value = "’P‰¿,’è‰¿": ws.Cells(6, 9).Value = HDR_UNIT_PRICE
+    ws.Cells(7, 7).Value = HDR_QTY:       ws.Cells(7, 8).Value = "”—Ê,Qty": ws.Cells(7, 9).Value = HDR_QTY
+    ws.Cells(8, 7).Value = HDR_DATE:      ws.Cells(8, 8).Value = "“ú•t,”„ã“ú,Date": ws.Cells(8, 9).Value = HDR_DATE
+    ws.Cells(9, 7).Value = HDR_SALE_TYPE: ws.Cells(9, 8).Value = "æˆø‹æ•ª,SaleType": ws.Cells(9, 9).Value = HDR_SALE_TYPE
+    ws.Cells(10, 7).Value = HDR_DEPT:     ws.Cells(10, 8).Value = "•”–å,Dept": ws.Cells(10, 9).Value = HDR_DEPT
+End Sub
+
+Private Sub SetupAllSheet()
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(SH_ALL)
+    ws.Cells(1, ALL_COL_CLIENT).Value = HDR_CLIENT
+    ws.Cells(1, ALL_COL_PROD_CODE).Value = HDR_PROD_CODE
+    ws.Cells(1, ALL_COL_AMOUNT).Value = HDR_AMOUNT
+    ws.Cells(1, ALL_COL_UNIT_PRICE).Value = HDR_UNIT_PRICE
+    ws.Cells(1, ALL_COL_QTY).Value = HDR_QTY
+    ws.Cells(1, ALL_COL_DATE).Value = HDR_DATE
+    ws.Cells(1, ALL_COL_SALE_TYPE).Value = HDR_SALE_TYPE
+    ws.Cells(1, ALL_COL_DEPT).Value = HDR_DEPT
+    ws.Cells(1, ALL_COL_PROD_NAME).Value = HDR_PROD_NAME
+    ws.Cells(1, ALL_COL_MARGIN).Value = HDR_MARGIN
+    ws.Cells(1, ALL_COL_SOURCE).Value = HDR_SOURCE
+    With ws.Rows(1)
+        .Font.Bold = True
+        .Interior.Color = RGB(200, 220, 240)
+    End With
+    ws.Columns("A:K").AutoFit
+
+    ' Add upload button
+    Dim uploadBtn As Object
+    Set uploadBtn = ws.Buttons.Add(700, 5, 180, 28)
+    uploadBtn.Caption = "SharePoint‚ÖƒAƒbƒvƒ[ƒh"
+    uploadBtn.OnAction = "modSharePoint.UploadAllToSharePoint"
+End Sub
+
+Private Sub SetupAggrSheet()
+    Dim ws As Worksheet
+    Set ws = ThisWorkbook.Sheets(SH_AGGR)
+
+    ' Filter labels
+    ws.Cells(1, 1).Value = "•”‘I‘ğ"
+    ws.Cells(2, 1).Value = "ŠJn“ú"
+    ws.Cells(3, 1).Value = "I—¹“ú"
+    ws.Range("A1:A3").Font.Bold = True
+    ws.Range(AGGR_DEPT_CELL).Value = "‘S•”"
+
+    ' Aggregate header row
+    ws.Cells(AGGR_HDR_ROW, 2).Value = "”„ã‹àŠz‡Œv"
+    ws.Cells(AGGR_HDR_ROW, 3).Value = "”„ã”—Ê‡Œv"
+    ws.Cells(AGGR_HDR_ROW, 4).Value = "Œû‘K‘Šz"
+    With ws.Rows(AGGR_HDR_ROW)
+        .Font.Bold = True
+        .Interior.Color = RGB(200, 220, 240)
+    End With
+
+    ws.Columns("A").ColumnWidth = 30
+    ws.Columns("B:D").ColumnWidth = 15
+
+    ' Add chart button
+    Dim chartBtn As Object
+    Set chartBtn = ws.Buttons.Add(330, 5, 150, 28)
+    chartBtn.Caption = "ƒOƒ‰ƒtì¬"
+    chartBtn.OnAction = "modChart.DrawAggrChart"
+
+    ' Add upload button
+    Dim uploadBtn As Object
+    Set uploadBtn = ws.Buttons.Add(490, 5, 180, 28)
+    uploadBtn.Caption = "SharePoint‚ÖƒAƒbƒvƒ[ƒh"
+    uploadBtn.OnAction = "modSharePoint.UploadToSharePoint"
+End Sub
+
+Private Sub InjectAggrEvent()
+    ' Requires "Trust access to the VBA project object model" to be enabled in Excel Trust Center
+    Dim ws As Worksheet
+    Dim codeModule As Object
+    Dim code As String
+
+    Set ws = ThisWorkbook.Sheets(SH_AGGR)
+    Set codeModule = ThisWorkbook.VBProject.VBComponents(ws.CodeName).CodeModule
+
+    code = "Option Explicit" & vbNewLine & vbNewLine & _
+           "Private Sub Worksheet_Change(ByVal Target As Range)" & vbNewLine & _
+           "    Dim triggerRange As Range" & vbNewLine & _
+           "    Set triggerRange = Me.Range(AGGR_DEPT_CELL & "","" & AGGR_FROM_CELL & "","" & AGGR_TO_CELL)" & vbNewLine & _
+           "    If Intersect(Target, triggerRange) Is Nothing Then Exit Sub" & vbNewLine & _
+           "    Application.ScreenUpdating = False" & vbNewLine & _
+           "    Application.Calculation = xlCalculationManual" & vbNewLine & _
+           "    Application.EnableEvents = False" & vbNewLine & _
+           "    On Error GoTo ErrHandler" & vbNewLine & _
+           "    modAggregation.Rebuild" & vbNewLine & _
+           "ErrHandler:" & vbNewLine & _
+           "    Application.ScreenUpdating = True" & vbNewLine & _
+           "    Application.Calculation = xlCalculationAutomatic" & vbNewLine & _
+           "    Application.EnableEvents = True" & vbNewLine & _
+           "End Sub"
+
+    codeModule.AddFromString code
+End Sub
