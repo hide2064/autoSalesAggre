@@ -174,18 +174,24 @@ Public Function CollectUniqueDepts() As Object
     Dim deptArr As Variant
     Dim r As Long
     Dim dept As String
+    Dim colDept As Integer
 
     Set dict = NewDict()
-
     Set wsAll = ThisWorkbook.Sheets(SH_ALL)
 
-    lastRow = wsAll.Cells(wsAll.Rows.Count, ALL_COL_DEPT).End(xlUp).Row
+    colDept = GetAllColIndex(wsAll, HDR_DEPT)
+    If colDept = 0 Then
+        Set CollectUniqueDepts = dict
+        Exit Function
+    End If
+
+    lastRow = wsAll.Cells(wsAll.Rows.Count, colDept).End(xlUp).Row
     If lastRow < 2 Then
         Set CollectUniqueDepts = dict
         Exit Function
     End If
 
-    deptArr = wsAll.Range(wsAll.Cells(2, ALL_COL_DEPT), wsAll.Cells(lastRow, ALL_COL_DEPT)).Value
+    deptArr = wsAll.Range(wsAll.Cells(2, colDept), wsAll.Cells(lastRow, colDept)).Value
 
     For r = 1 To UBound(deptArr, 1)
         dept = Trim(CStr(deptArr(r, 1)))
