@@ -24,7 +24,7 @@ xlApp.DisplayAlerts = False
 
 Set wb = xlApp.Workbooks.Add
 
-' ---- Create 4 sheets: main, Config, all, Shuukei (placeholder for é›†è¨ˆ) ----
+' ---- Create 4 sheets: main, Config, all, Shuukei (placeholder for WŒv) ----
 ' Remove extra default sheets first
 Do While wb.Sheets.Count > 1
     wb.Sheets(wb.Sheets.Count).Delete

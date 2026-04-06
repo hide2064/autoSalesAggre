@@ -19,21 +19,18 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Delete `autoSalesAggre.xlsm`, then re-run `cscript setup\create_workbook.vbs`.
 
-## Encoding rule for src/*.bas files
+## Encoding rules
 
-All `.bas` files must be saved in **Shift-JIS (CP932)**. After editing any `.bas` file, convert it with:
+All `.bas` files (`src/`) and `.vbs` files (`setup/`) must be saved in **Shift-JIS (CP932)**. After editing, convert with:
 
 ```python
 python3 -c "
-import os
-src_dir = 'src'
-for fname in os.listdir(src_dir):
-    if fname.endswith('.bas'):
-        fpath = os.path.join(src_dir, fname)
-        with open(fpath, 'r', encoding='utf-8') as f:
-            text = f.read()
-        with open(fpath, 'w', encoding='cp932') as f:
-            f.write(text)
+import os, glob
+for fpath in glob.glob('src/*.bas') + glob.glob('setup/*.vbs'):
+    with open(fpath, 'r', encoding='utf-8') as f:
+        text = f.read()
+    with open(fpath, 'w', encoding='cp932') as f:
+        f.write(text)
 "
 ```
 
